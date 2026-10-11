@@ -1,0 +1,223 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-sans);
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   DARK MODE — EXPLICIT html.dark OVERRIDES
+   These are the authoritative dark styles. They override
+   any Tailwind utility regardless of specificity order.
+   ============================================================ */
+
+html.dark,
+html.dark body {
+  background-color: #000000 !important;
+  color: #f4f4f5 !important;
+}
+
+/* Cards */
+html.dark .finance-card {
+  background-color: #121212 !important;
+  border-color: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+/* Buttons */
+html.dark .btn-secondary {
+  background-color: #18181b !important;
+  border-color: #3f3f46 !important;
+  color: #e4e4e7 !important;
+}
+html.dark .btn-secondary:hover {
+  background-color: #27272a !important;
+  color: #ffffff !important;
+}
+
+/* Form inputs */
+html.dark .input {
+  background-color: #18181b !important;
+  border-color: #3f3f46 !important;
+  color: #f4f4f5 !important;
+}
+html.dark .input::placeholder {
+  color: #71717a !important;
+}
+html.dark .input:focus {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 1px #10b981 !important;
+}
+
+/* Labels */
+html.dark .label {
+  color: #a1a1aa !important;
+}
+
+/* Generic white backgrounds → dark surface */
+html.dark [class*="bg-white"] {
+  background-color: #121212 !important;
+}
+html.dark [class*="bg-zinc-50"] {
+  background-color: #18181b !important;
+}
+html.dark [class*="bg-zinc-100"] {
+  background-color: #18181b !important;
+}
+html.dark [class*="bg-zinc-200"] {
+  background-color: #27272a !important;
+}
+
+/* Generic border overrides */
+html.dark [class*="border-zinc-100"],
+html.dark [class*="border-zinc-200"],
+html.dark [class*="border-zinc-300"] {
+  border-color: #27272a !important;
+}
+
+/* Generic text overrides */
+html.dark [class*="text-zinc-900"] {
+  color: #f4f4f5 !important;
+}
+html.dark [class*="text-zinc-800"] {
+  color: #e4e4e7 !important;
+}
+html.dark [class*="text-zinc-700"] {
+  color: #d4d4d8 !important;
+}
+html.dark [class*="text-zinc-600"] {
+  color: #a1a1aa !important;
+}
+html.dark [class*="text-zinc-500"] {
+  color: #71717a !important;
+}
+
+/* Header */
+html.dark header,
+html.dark [class*="bg-white/95"] {
+  background-color: rgba(0, 0, 0, 0.95) !important;
+  border-bottom-color: #27272a !important;
+}
+
+/* Sticky wizard header */
+html.dark [class*="bg-white/95"],
+html.dark [class*="dark:bg-\\[#121212\\]/95"] {
+  background-color: rgba(18, 18, 18, 0.97) !important;
+}
+
+/* Dividers */
+html.dark [class*="divide-zinc-100"] > :not([hidden]) ~ :not([hidden]),
+html.dark [class*="divide-zinc-200"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: #27272a !important;
+}
+
+/* ============================================================
+   FORM ELEMENTS
+   ============================================================ */
+button, input, select, textarea {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid #0d684c;
+  outline-offset: 2px;
+}
+
+html.dark :focus-visible {
+  outline-color: #10b981;
+}
+
+/* ============================================================
+   SCROLLBARS
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #27272a;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+/* ============================================================
+   TAILWIND COMPONENT LAYER
+   ============================================================ */
+@layer components {
+  .finance-card {
+    @apply rounded-2xl border border-zinc-200 bg-white shadow-sm transition-colors duration-150 dark:border-zinc-800 dark:bg-[#121212];
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-[#0d684c] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-[#0a563e] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 dark:bg-[#0d684c] dark:hover:bg-[#0f7a59];
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 shadow-sm transition-all duration-150 hover:bg-zinc-50 hover:text-zinc-900 active:scale-[0.98] dark:border-zinc-800 dark:bg-[#18181b] dark:text-zinc-200 dark:hover:bg-[#202024] dark:hover:text-white;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 outline-none transition-colors duration-150 placeholder:text-zinc-400 focus:border-[#0d684c] focus:ring-1 focus:ring-[#0d684c] dark:border-zinc-800 dark:bg-[#18181b] dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-emerald-500 dark:focus:ring-emerald-500;
+  }
+
+  .label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400;
+  }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-delay: -1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    background-attachment: initial !important;
+    scroll-behavior: auto !important;
+    transition-delay: 0s !important;
+    transition-duration: 0s !important;
+  }
+}

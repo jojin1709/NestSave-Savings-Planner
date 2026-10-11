@@ -1,0 +1,336 @@
+import { Goal, Priority, Transaction } from "./types";
+
+export function daysRemaining(targetDate: string): number {
+  if (!targetDate) return 0;
+  const end = new Date(targetDate + "T23:59:59");
+  const now = new Date();
+  const diff = Math.ceil((end.getTime() - now.getTime()) / 86400000);
+  return Math.max(0, diff);
+}
+
+export function daysElapsed(startDate: string, today = new Date()): number {
+  if (!startDate) return 0;
+  const start = new Date(startDate + "T00:00:00");
+  const diff = Math.floor((today.getTime() - start.getTime()) / 86400000);
+  return Math.max(0, diff);
+}
+
+export function remainingAmount(targetAmount: number, currentAmount: number): number {
+  return Math.max(0, Math.round(targetAmount) - Math.round(currentAmount));
+}
+
+export function requiredDaily(targetAmount: number, currentAmount: number, targetDate: string): number {
+  const remaining = remainingAmount(targetAmount, currentAmount);
+  if (remaining <= 0) return 0;
+  const days = Math.max(daysRemaining(targetDate), 1);
+  return Math.ceil(remaining / days);
+}
+
+export function requiredWeekly(targetAmount: number, currentAmount: number, targetDate: string): number {
+  const remaining = remainingAmount(targetAmount, currentAmount);
+  if (remaining <= 0) return 0;
+  const weeks = Math.max(daysRemaining(targetDate) / 7, 0.1);
+  return Math.ceil(remaining / weeks);
+}
+
+export function requiredMonthly(targetAmount: number, currentAmount: number, targetDate: string): number {
+  const remaining = remainingAmount(targetAmount, currentAmount);
+  if (remaining <= 0) return 0;
+  const months = Math.max(daysRemaining(targetDate) / 30.4375, 0.1);
+  return Math.ceil(remaining / months);
+}
+
+export function monthlyGoalRequirement(goal: Goal): number {
+  if (goal.status !== "active" || goal.currentAmount >= goal.targetAmount) return 0;
+  return requiredMonthly(goal.targetAmount, goal.currentAmount, goal.targetDate);
+}
+
+export function savingsCapacity(
+  income = 0,
+  fixedExpenses = 0,
+  otherSavings = 0,
+  safetyBuffer = 0
+): number {
+  const capacity = income - fixedExpenses - otherSavings - safetyBuffer;
+  return Math.max(0, Math.round(capacity));
+}
+
+export type FeasibilityVerdict = "DOABLE" | "TIGHT" | "NOT REALISTIC";
+
+export function feasibility(
+  requiredMonthlyAmount: number,
+  availableMonthlyCapacity: number
+): {
+  verdict: FeasibilityVerdict;
+  ratio: number;
+  description: string;
+} {
+  if (availableMonthlyCapacity <= 0) {
+    return {
+      verdict: "NOT REALISTIC",
+      ratio: 0,
+      description: "No monthly savings capacity defined or monthly expenses exceed income."
+    };
+  }
+
+  const ratio = requiredMonthlyAmount / availableMonthlyCapacity;
+
+  if (ratio <= 0.7) {
+    return {
+      verdict: "DOABLE",
+      ratio,
+      description: "Requires 70% or less of your available monthly savings capacity. Sustainable pace."
+    };
+  }
+
+  if (ratio <= 1.0) {
+    return {
+      verdict: "TIGHT",
+      ratio,
+      description: "Consumes 70%–100% of your surplus. Requires tight financial discipline."
+    };
+  }
+
+  return {
+    verdict: "NOT REALISTIC",
+    ratio,
+    description: "Required savings exceeds your available monthly capacity. Consider extending the deadline."
+  };
+}
+
+export function projectedCompletionDate(
+  targetAmount: number,
+  currentAmount: number,
+  monthlySavingsPace: number
+): Date | null {
+  if (currentAmount >= targetAmount) return new Date();
+  if (monthlySavingsPace <= 0) return null;
+  const remaining = remainingAmount(targetAmount, currentAmount);
+  const monthsNeeded = Math.ceil(remaining / monthlySavingsPace);
+  const projected = new Date();
+  projected.setMonth(projected.getMonth() + monthsNeeded);
+  return projected;
+}
+
+export function currentPace(
+  currentAmount: number,
+  startDate: string,
+  today = new Date()
+): {
+  dailyPace: number;
+  monthlyPace: number;
+} {
+  const elapsed = Math.max(daysElapsed(startDate, today), 1);
+  const dailyPace = currentAmount / elapsed;
+  return {
+    dailyPace: Math.round(dailyPace),
+    monthlyPace: Math.round(dailyPace * 30.4375)
+  };
+}
+
+export function aheadBehindSchedule(
+  targetAmount: number,
+  currentAmount: number,
+  startDate: string,
+  targetDate: string,
+  today = new Date()
+): {
+  status: "ahead" | "on_track" | "behind";
+  label: "Ahead" | "On Track" | "Behind";
+  diffAmount: number;
+  expectedAmount: number;
+  progressPercent: number;
+} {
+  const progressPercent = targetAmount > 0
+    ? Math.min(100, Math.round((currentAmount / targetAmount) * 100))
+    : 0;
+
+  if (!startDate || !targetDate || targetAmount <= 0) {
+    return {
+      status: "on_track",
+      label: "On Track",
+      diffAmount: 0,
+      expectedAmount: 0,
+      progressPercent
+    };
+  }
+
+  const start = new Date(startDate + "T00:00:00");
+  const end = new Date(targetDate + "T23:59:59");
+  const totalDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86400000));
+  const elapsed = Math.max(0, Math.min(totalDays, Math.floor((today.getTime() - start.getTime()) / 86400000)));
+
+  const expectedAmount = Math.round(targetAmount * (elapsed / totalDays));
+  const diffAmount = currentAmount - expectedAmount;
+  const tolerance = targetAmount * 0.05; // 5% buffer
+
+  if (diffAmount > tolerance) {
+    return { status: "ahead", label: "Ahead", diffAmount, expectedAmount, progressPercent };
+  }
+  if (diffAmount < -tolerance) {
+    return { status: "behind", label: "Behind", diffAmount, expectedAmount, progressPercent };
+  }
+
+  return { status: "on_track", label: "On Track", diffAmount, expectedAmount, progressPercent };
+}
+
+export function suggestedDeadline(
+  targetAmount: number,
+  currentAmount: number,
+  availableMonthlyCapacity: number,
+  startDate?: string
+): string {
+  const remaining = remainingAmount(targetAmount, currentAmount);
+  const base = startDate ? new Date(startDate) : new Date();
+
+  if (availableMonthlyCapacity <= 0) {
+    // Default safe horizon: 12 months
+    const d = new Date(base);
+    d.setMonth(d.getMonth() + 12);
+    return d.toISOString().slice(0, 10);
+  }
+
+  const monthsNeeded = Math.max(1, Math.ceil(remaining / availableMonthlyCapacity));
+  const d = new Date(base);
+  d.setMonth(d.getMonth() + monthsNeeded);
+  return d.toISOString().slice(0, 10);
+}
+
+export function priorityWeight(priority: Priority): number {
+  switch (priority) {
+    case "critical": return 4;
+    case "high": return 3;
+    case "medium": return 2;
+    case "low": return 1;
+  }
+}
+
+export function conflictDetection(
+  goals: Goal[],
+  totalMonthlyCapacity = 0
+): {
+  hasConflict: boolean;
+  totalRequiredMonthly: number;
+  totalMonthlyCapacity: number;
+  deficit: number;
+  activeGoalsCount: number;
+} {
+  const active = goals.filter(g => g.status === "active" && g.targetAmount > g.currentAmount);
+  const totalRequiredMonthly = active.reduce((sum, g) => sum + monthlyGoalRequirement(g), 0);
+
+  const hasConflict = totalMonthlyCapacity > 0 && totalRequiredMonthly > totalMonthlyCapacity;
+  const deficit = hasConflict ? totalRequiredMonthly - totalMonthlyCapacity : 0;
+
+  return {
+    hasConflict,
+    totalRequiredMonthly,
+    totalMonthlyCapacity,
+    deficit,
+    activeGoalsCount: active.length
+  };
+}
+
+export function multiGoalAllocation(
+  goals: Goal[],
+  totalMonthlyCapacity = 0
+): {
+  goalId: string;
+  goalName: string;
+  priority: Priority;
+  suggestedMonthlyAllocation: number;
+  requiredMonthly: number;
+  sharePercent: number;
+}[] {
+  const active = goals.filter(g => g.status === "active" && g.targetAmount > g.currentAmount);
+  if (active.length === 0 || totalMonthlyCapacity <= 0) return [];
+
+  const totalWeight = active.reduce((sum, g) => sum + priorityWeight(g.priority), 0);
+
+  return active.map(g => {
+    const weight = priorityWeight(g.priority);
+    const ratio = weight / totalWeight;
+    const suggestedMonthlyAllocation = Math.round(totalMonthlyCapacity * ratio);
+    const required = monthlyGoalRequirement(g);
+
+    return {
+      goalId: g.id,
+      goalName: g.name,
+      priority: g.priority,
+      suggestedMonthlyAllocation,
+      requiredMonthly: required,
+      sharePercent: Math.round(ratio * 100)
+    };
+  });
+}
+
+export function formatINR(value: number): string {
+  const safeVal = Math.max(0, Math.round(isNaN(value) ? 0 : value));
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0
+  }).format(safeVal);
+}
+
+// -------------------------------------------------------------
+// CSV GENERATION (RFC-4180 COMPLIANT)
+// -------------------------------------------------------------
+export function exportGoalsToCSV(goals: Goal[]): string {
+  const headers = [
+    "Goal ID", "Name", "Type", "Category", "Target Amount", "Current Amount",
+    "Remaining Amount", "Start Date", "Target Date", "Priority", "Status",
+    "Product URL", "Recurring Contribution", "Recurring Frequency", "Created At"
+  ];
+
+  const escapeCSV = (val: any) => {
+    const str = val === undefined || val === null ? "" : String(val);
+    return `"${str.replace(/"/g, '""')}"`;
+  };
+
+  const rows = goals.map(g => [
+    escapeCSV(g.id),
+    escapeCSV(g.name),
+    escapeCSV(g.type),
+    escapeCSV(g.category),
+    g.targetAmount,
+    g.currentAmount,
+    remainingAmount(g.targetAmount, g.currentAmount),
+    escapeCSV(g.startDate),
+    escapeCSV(g.targetDate),
+    escapeCSV(g.priority),
+    escapeCSV(g.status),
+    escapeCSV(g.productUrl || ""),
+    g.recurringContribution || "",
+    escapeCSV(g.recurringFrequency || ""),
+    escapeCSV(g.createdAt)
+  ]);
+
+  return [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
+}
+
+export function exportTransactionsToCSV(
+  transactions: Transaction[],
+  goalNameMap: Record<string, string>
+): string {
+  const headers = [
+    "Transaction ID", "Goal ID", "Goal Name", "Type", "Amount", "Date", "Note", "Created At"
+  ];
+
+  const escapeCSV = (val: any) => {
+    const str = val === undefined || val === null ? "" : String(val);
+    return `"${str.replace(/"/g, '""')}"`;
+  };
+
+  const rows = transactions.map(t => [
+    escapeCSV(t.id),
+    escapeCSV(t.goalId),
+    escapeCSV(goalNameMap[t.goalId] || "Unknown Goal"),
+    escapeCSV(t.type),
+    t.amount,
+    escapeCSV(t.date),
+    escapeCSV(t.note),
+    escapeCSV(t.createdAt)
+  ]);
+
+  return [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
+}
