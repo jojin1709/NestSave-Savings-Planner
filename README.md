@@ -6,13 +6,18 @@
 
 It runs entirely on your device. No accounts. No cloud sync. No tracking. Your financial data never leaves your browser.
 
-<p><strong>Get started in seconds</strong></p>
+<br />
 
-```bash
-npm install && npm run dev
-```
+<a href="https://nestsave.vercel.app/" target="_blank">
+  <img src="https://img.shields.io/badge/Launch%20App-nestsave.vercel.app-0d684c?style=for-the-badge&logo=vercel&logoColor=white" alt="Launch NestSave" />
+</a>
 
-<sub>Open <code>http://localhost:3000</code> — your private savings vault is ready.</sub>
+<br /><br />
+
+**Use NestSave directly in your browser:**  
+### 🌐 [https://nestsave.vercel.app](https://nestsave.vercel.app/)
+
+<sub>Installable as a Progressive Web App (PWA) on Mobile and Desktop. Works 100% offline.</sub>
 
 ---
 
@@ -29,14 +34,14 @@ npm install && npm run dev
 ## Table of Contents
 
 - [What is NestSave?](#what-is-nestsave)
-- [Quick Start](#quick-start)
+- [Live Web App](#live-web-app)
 - [Features](#features)
-- [Architecture](#architecture)
+- [Architecture & Security](#architecture--security)
 - [Tech Stack](#tech-stack)
 - [Dark Mode](#dark-mode)
 - [Roadmap](#roadmap)
 - [Developer](#developer)
-- [License](#license)
+- [Copyright & License](#copyright--license)
 
 ---
 
@@ -64,35 +69,15 @@ NestSave is built for individuals and families who want a clear, private, and ho
 
 ---
 
-## Quick Start
+## Live Web App
 
-### Prerequisites
+NestSave is deployed and available directly at:
 
-- **Node.js 18+**
-- A modern browser (Chrome, Firefox, Edge, Safari)
+### 🚀 **[nestsave.vercel.app](https://nestsave.vercel.app/)**
 
-### Run Locally
-
-```bash
-# Clone the repository
-git clone https://github.com/jojin1709/NestSave-Savings-Planner-v1.git
-cd NestSave-Savings-Planner-v1
-
-# Install dependencies
-npm install
-
-# Start the development server
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Production Build
-
-```bash
-npm run build
-npm start
-```
+- **No installation needed:** Open the link in any modern browser.
+- **Install as App:** Tap **Add to Home Screen** or **Install** in your browser to install NestSave as an offline PWA on iOS, Android, macOS, or Windows.
+- **Your Data Stays on Your Device:** Nothing is uploaded to any server.
 
 ---
 
@@ -145,7 +130,7 @@ npm start
 - Indian Rupee (₹) formatting with Indian numbering system (₹1,00,000)
 - Lucide SVG icons throughout — zero emojis
 
-### Privacy
+### Privacy & Security
 - No login, no account, no signup
 - No backend server
 - No analytics or tracking
@@ -154,14 +139,14 @@ npm start
 
 ---
 
-## Architecture
+## Architecture & Security
 
 ```
 NestSave
 ├── app/                    — Next.js App Router
 │   ├── layout.tsx          — Root layout with PWA metadata
 │   ├── page.tsx            — Entry point
-│   └── globals.css         — Design system & dark mode tokens
+│   └── globals.css         — Pitch-black dark mode tokens & design system
 │
 ├── components/
 │   ├── App.tsx             — Full application UI and state
@@ -183,7 +168,7 @@ NestSave
     └── sw.js               — Service worker for offline support
 ```
 
-The calculation engine (`lib/calculations.ts`) is a collection of pure TypeScript functions with no side effects. It is deliberately separate from the storage layer so it can be reused in a Capacitor mobile shell or any future platform.
+The calculation engine (`lib/calculations.ts`) is a collection of pure TypeScript functions with zero external dependencies. All data is persisted locally in the user's browser sandbox using IndexedDB.
 
 ---
 
@@ -194,10 +179,11 @@ The calculation engine (`lib/calculations.ts`) is a collection of pure TypeScrip
 | Framework | Next.js 14 (App Router) |
 | Language | TypeScript |
 | Styling | Tailwind CSS v3 + Vanilla CSS |
-| Icons | Lucide React |
-| Storage | IndexedDB (via raw IDB API) |
-| Font | Plus Jakarta Sans (Google Fonts) |
-| PWA | Service Worker + Web App Manifest |
+| Icons | Lucide React (SVG) |
+| Storage | IndexedDB (Browser Sandbox) |
+| Font | Plus Jakarta Sans |
+| Deployment | Vercel |
+| PWA | Web App Manifest + Offline Service Worker |
 
 ---
 
@@ -260,9 +246,13 @@ NestSave is an independent project — designed, built, and maintained by Jojin 
 
 ---
 
-## License
+## Copyright & License
 
-NestSave is open source under the [MIT License](LICENSE).
+Copyright © 2026 **Jojin John**. All rights reserved.
+
+This project is proprietary. Unauthorized copying, modification, distribution, or reproduction of this software and its source code is strictly prohibited. 
+
+Users are welcome to use the official web application at **[https://nestsave.vercel.app](https://nestsave.vercel.app/)**.
 
 ---
 
