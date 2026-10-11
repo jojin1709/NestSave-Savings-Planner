@@ -9,13 +9,14 @@ import {
   Flame, Award, AlertCircle, CheckCircle2, Clock, Percent, TrendingUp,
   FileSpreadsheet, AlertTriangle, Calendar, Repeat, PlayCircle, Bot,
   PauseCircle, CheckCircle, RefreshCw, Cpu, Wifi, WifiOff, Undo2, Target,
-  Smartphone, Share
+  Smartphone, Share, BarChart3
 } from "lucide-react";
 
 import NestSaveLogo from "./NestSaveLogo";
 import ConfirmationModal from "./ConfirmationModal";
 import GoalCompletionModal from "./GoalCompletionModal";
 import GoalCategoryIcon, { ICON_OPTIONS } from "./GoalCategoryIcon";
+import AnalyticsView from "./AnalyticsView";
 
 import {
   Goal, Transaction, AppSettings, GoalStatus, GoalType, Priority, SavingsFrequency
@@ -80,7 +81,7 @@ export default function App() {
   const [isOnline, setIsOnline] = useState(true);
 
   // Navigation
-  const [view, setView] = useState<"dashboard" | "goal" | "settings" | "ai">("dashboard");
+  const [view, setView] = useState<"dashboard" | "goal" | "settings" | "ai" | "analytics">("dashboard");
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [showCreateWizard, setShowCreateWizard] = useState(false);
 
@@ -591,6 +592,20 @@ export default function App() {
               <span>Device-only vault</span>
             </div>
 
+            {/* Analytics & Charts button */}
+            <button
+              onClick={() => setView("analytics")}
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+                view === "analytics"
+                  ? "border-[#0d684c] bg-emerald-50 text-[#0d684c] dark:border-emerald-500 dark:bg-[#18181b] dark:text-emerald-300"
+                  : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-[#18181b] dark:text-zinc-300 dark:hover:bg-[#202024]"
+              }`}
+              title="Financial Analytics & Charts"
+            >
+              <BarChart3 size={15} />
+              <span className="hidden sm:inline">Analytics</span>
+            </button>
+
             {/* AI Assistant button */}
             <button
               onClick={() => setView("ai")}
@@ -919,6 +934,21 @@ export default function App() {
               await saveSettings(newSettings);
               setSettings(newSettings);
             }}
+          />
+        )}
+
+        {/* VIEW 5: ANALYTICS & CHARTS */}
+        {view === "analytics" && (
+          <AnalyticsView
+            goals={goals}
+            transactions={transactions}
+            settings={settings}
+            onBack={() => setView("dashboard")}
+            onNavigateGoal={(goalId) => {
+              setSelectedGoalId(goalId);
+              setView("goal");
+            }}
+            onOpenSettings={() => setView("settings")}
           />
         )}
       </main>
