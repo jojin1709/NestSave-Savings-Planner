@@ -8,7 +8,8 @@ import {
   Sparkles, Trash2, Upload, Wallet, X, Sun, SlidersHorizontal,
   Flame, Award, AlertCircle, CheckCircle2, Clock, Percent, TrendingUp,
   FileSpreadsheet, AlertTriangle, Calendar, Repeat, PlayCircle, Bot,
-  PauseCircle, CheckCircle, RefreshCw, Cpu, Wifi, WifiOff, Undo2, Target
+  PauseCircle, CheckCircle, RefreshCw, Cpu, Wifi, WifiOff, Undo2, Target,
+  Smartphone, Share
 } from "lucide-react";
 
 import NestSaveLogo from "./NestSaveLogo";
@@ -98,6 +99,10 @@ export default function App() {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "completed" | "paused">("all");
   const [sortBy, setSortBy] = useState<"targetDate" | "progress" | "targetAmount">("targetDate");
 
+  // PWA Install State
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+
   // Reversible Toast Notification with Undo Action
   const [toast, setToast] = useState<{
     message: string;
@@ -129,8 +134,37 @@ export default function App() {
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
-    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    // Check if running as installed standalone PWA
+    if (typeof window !== "undefined") {
+      const isApp =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as any).standalone === true;
+      setIsStandalone(isApp);
+
+      const handleBeforeInstall = (e: Event) => {
+        e.preventDefault();
+        setInstallPrompt(e);
+      };
+
+      const handleAppInstalled = () => {
+        setInstallPrompt(null);
+        setIsStandalone(true);
+        showToast("NestSave installed successfully to your home screen!");
+      };
+
+      window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+      window.addEventListener("appinstalled", handleAppInstalled);
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+      }
+
+      return () => {
+        window.removeEventListener("online", handleOnline);
+        window.removeEventListener("offline", handleOffline);
+        window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+        window.removeEventListener("appinstalled", handleAppInstalled);
+      };
     }
 
     return () => {
@@ -138,6 +172,22 @@ export default function App() {
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
+
+  async function triggerInstallApp() {
+    if (installPrompt) {
+      installPrompt.prompt();
+      try {
+        const choice = await installPrompt.userChoice;
+        if (choice.outcome === "accepted") {
+          setInstallPrompt(null);
+          setIsStandalone(true);
+          showToast("Installing NestSave to your device...");
+        }
+      } catch {}
+    } else {
+      showToast("Download prompt ready. Use browser menu → 'Install app' to install.", "info");
+    }
+  }
 
   const isDark = useMemo(() => {
     if (settings.theme === "dark") return true;
@@ -555,6 +605,18 @@ export default function App() {
               <span className="hidden sm:inline">Local AI</span>
             </button>
 
+            {/* Install PWA button (shown if not running in standalone app mode) */}
+            {!isStandalone && (
+              <button
+                onClick={triggerInstallApp}
+                className="flex items-center gap-1.5 rounded-xl border border-[#0d684c]/40 bg-emerald-50 px-2.5 py-2 text-xs font-semibold text-[#0d684c] hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 transition"
+                title="Install NestSave App to Phone or Desktop"
+              >
+                <Smartphone size={15} />
+                <span className="hidden sm:inline">Install App</span>
+              </button>
+            )}
+
             {/* Settings button */}
             <button
               onClick={() => setView("settings")}
@@ -842,6 +904,8 @@ export default function App() {
             onExportCSV={handleExportGoalsCSV}
             onImportJSON={handleImportJSON}
             onResetAll={requestResetDatabase}
+            isStandalone={isStandalone}
+            onTriggerInstall={triggerInstallApp}
           />
         )}
 
@@ -2192,7 +2256,8 @@ function EditGoalModal({
 // SETTINGS & PRIVACY VIEW
 // -------------------------------------------------------------
 function SettingsView({
-  settings, onSaveSettings, onBack, onExportJSON, onExportCSV, onImportJSON, onResetAll
+  settings, onSaveSettings, onBack, onExportJSON, onExportCSV, onImportJSON, onResetAll,
+  isStandalone, onTriggerInstall
 }: {
   settings: AppSettings;
   onSaveSettings: (s: AppSettings) => Promise<void>;
@@ -2201,6 +2266,8 @@ function SettingsView({
   onExportCSV: () => void;
   onImportJSON: (f: File) => void;
   onResetAll: () => void;
+  isStandalone?: boolean;
+  onTriggerInstall?: () => void;
 }) {
   const [theme, setTheme] = useState(settings.theme);
   const [income, setIncome] = useState(settings.monthlyIncome ? String(settings.monthlyIncome) : "");
@@ -2266,6 +2333,39 @@ function SettingsView({
                 {t}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Mobile & Offline App (PWA) */}
+        <div className="finance-card p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Smartphone size={18} className="text-[#0d684c] dark:text-emerald-400" />
+              <h3 className="font-bold text-sm">Download to Phone (PWA App)</h3>
+            </div>
+            {isStandalone ? (
+              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                Installed as App
+              </span>
+            ) : (
+              <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                Web Browser
+              </span>
+            )}
+          </div>
+
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            Install NestSave directly to your iPhone or Android home screen for an app-like experience with fullscreen display and 100% offline capability.
+          </p>
+
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={onTriggerInstall}
+              className="btn-primary text-xs !py-2"
+            >
+              <Smartphone size={14} /> Install to Phone / Desktop
+            </button>
           </div>
         </div>
 

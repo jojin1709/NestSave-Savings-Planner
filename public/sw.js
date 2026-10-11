@@ -2,7 +2,9 @@ const CACHE_NAME = "nestsave-v1";
 const OFFLINE_URLS = [
   "/",
   "/manifest.json",
-  "/icon.svg"
+  "/icon.svg",
+  "/icon-192.png",
+  "/icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {
