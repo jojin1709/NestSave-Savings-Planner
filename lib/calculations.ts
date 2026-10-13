@@ -334,3 +334,142 @@ export function exportTransactionsToCSV(
 
   return [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
 }
+
+// -------------------------------------------------------------
+// FINANCIAL CALCULATORS MATH ENGINE
+// -------------------------------------------------------------
+
+export interface EMICalculationResult {
+  monthlyEMI: number;
+  totalInterest: number;
+  totalPayment: number;
+  principal: number;
+}
+
+export function calculateEMI(
+  principal: number,
+  annualInterestRate: number,
+  tenureMonths: number
+): EMICalculationResult {
+  if (principal <= 0 || tenureMonths <= 0) {
+    return { monthlyEMI: 0, totalInterest: 0, totalPayment: 0, principal };
+  }
+  if (annualInterestRate <= 0) {
+    const emi = Math.round(principal / tenureMonths);
+    return { monthlyEMI: emi, totalInterest: 0, totalPayment: principal, principal };
+  }
+
+  const monthlyRate = annualInterestRate / 12 / 100;
+  const factor = Math.pow(1 + monthlyRate, tenureMonths);
+  const emi = Math.round((principal * monthlyRate * factor) / (factor - 1));
+  const totalPayment = emi * tenureMonths;
+  const totalInterest = Math.max(0, totalPayment - principal);
+
+  return {
+    monthlyEMI: emi,
+    totalInterest,
+    totalPayment,
+    principal
+  };
+}
+
+export interface SavingsVsEMIComparison {
+  purchasePrice: number;
+  downPayment: number;
+  loanAmount: number;
+  tenureMonths: number;
+  monthlyEMI: number;
+  totalLoanCost: number;
+  totalInterestPaid: number;
+  monthsToSaveCash: number;
+  interestSavedByWaiting: number;
+}
+
+export function compareSavingsVsEMI(
+  purchasePrice: number,
+  downPayment: number,
+  annualInterestRate: number,
+  tenureMonths: number,
+  monthlySavingsPace: number
+): SavingsVsEMIComparison {
+  const loanAmount = Math.max(0, purchasePrice - downPayment);
+  const emiResult = calculateEMI(loanAmount, annualInterestRate, tenureMonths);
+  
+  const netCashNeeded = Math.max(0, purchasePrice - downPayment);
+  const pace = Math.max(monthlySavingsPace, 1);
+  const monthsToSaveCash = Math.ceil(netCashNeeded / pace);
+
+  return {
+    purchasePrice,
+    downPayment,
+    loanAmount,
+    tenureMonths,
+    monthlyEMI: emiResult.monthlyEMI,
+    totalLoanCost: downPayment + emiResult.totalPayment,
+    totalInterestPaid: emiResult.totalInterest,
+    monthsToSaveCash,
+    interestSavedByWaiting: emiResult.totalInterest
+  };
+}
+
+export interface SIPCalculationResult {
+  monthlyInvestment: number;
+  totalInvested: number;
+  estimatedWealthGain: number;
+  maturityValue: number;
+  durationMonths: number;
+}
+
+export function calculateSIP(
+  monthlyInvestment: number,
+  expectedAnnualReturnRate: number,
+  durationYears: number
+): SIPCalculationResult {
+  const months = Math.round(durationYears * 12);
+  const totalInvested = monthlyInvestment * months;
+
+  if (expectedAnnualReturnRate <= 0 || monthlyInvestment <= 0 || months <= 0) {
+    return {
+      monthlyInvestment,
+      totalInvested,
+      estimatedWealthGain: 0,
+      maturityValue: totalInvested,
+      durationMonths: months
+    };
+  }
+
+  const monthlyRate = expectedAnnualReturnRate / 12 / 100;
+  // Standard SIP Formula: M = P * [((1 + i)^n - 1) / i] * (1 + i)
+  const factor = Math.pow(1 + monthlyRate, months);
+  const maturityValue = Math.round(
+    monthlyInvestment * ((factor - 1) / monthlyRate) * (1 + monthlyRate)
+  );
+  const estimatedWealthGain = Math.max(0, maturityValue - totalInvested);
+
+  return {
+    monthlyInvestment,
+    totalInvested,
+    estimatedWealthGain,
+    maturityValue,
+    durationMonths: months
+  };
+}
+
+export interface EmergencyFundRecommendation {
+  monthlyFixedExpenses: number;
+  tier3Months: number;
+  tier6Months: number;
+  tier12Months: number;
+}
+
+export function calculateEmergencyFund(
+  monthlyFixedExpenses: number
+): EmergencyFundRecommendation {
+  const base = Math.max(0, Math.round(monthlyFixedExpenses));
+  return {
+    monthlyFixedExpenses: base,
+    tier3Months: base * 3,
+    tier6Months: base * 6,
+    tier12Months: base * 12
+  };
+}

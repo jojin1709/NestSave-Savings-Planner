@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   ArrowLeft, ArrowUpRight, ArrowDownRight, CalendarDays, Check,
   ChevronRight, CircleHelp, Download, ExternalLink, IndianRupee,
@@ -9,7 +9,7 @@ import {
   Flame, Award, AlertCircle, CheckCircle2, Clock, Percent, TrendingUp,
   FileSpreadsheet, AlertTriangle, Calendar, Repeat, PlayCircle, Bot,
   PauseCircle, CheckCircle, RefreshCw, Cpu, Wifi, WifiOff, Undo2, Target,
-  Smartphone, Share, BarChart3
+  Smartphone, Share, BarChart3, TrendingDown, Trophy, Home, Calculator
 } from "lucide-react";
 
 import NestSaveLogo from "./NestSaveLogo";
@@ -17,15 +17,21 @@ import ConfirmationModal from "./ConfirmationModal";
 import GoalCompletionModal from "./GoalCompletionModal";
 import GoalCategoryIcon, { ICON_OPTIONS } from "./GoalCategoryIcon";
 import AnalyticsView from "./AnalyticsView";
+import ExpenseTrackerView from "./ExpenseTrackerView";
+import GamificationView from "./GamificationView";
 
 import {
-  Goal, Transaction, AppSettings, GoalStatus, GoalType, Priority, SavingsFrequency
+  Goal, Transaction, AppSettings, GoalStatus, GoalType, Priority, SavingsFrequency,
+  Expense, Budget, Badge, SavingsStreak
 } from "../lib/types";
 
 import {
   getAllGoals, saveGoal, deleteGoal, getAllTransactions,
   addTransactionAndUpdateGoal, getSettings, saveSettings,
-  exportFullBackup, importFullBackup, resetDatabase, DEFAULT_SETTINGS
+  exportFullBackup, importFullBackup, resetDatabase, DEFAULT_SETTINGS,
+  getAllExpenses, saveExpense, deleteExpense,
+  getAllBudgets, saveBudget, deleteBudget,
+  getStreak, updateStreak, getBadges, awardBadge
 } from "../lib/storage";
 
 import {
@@ -80,8 +86,17 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
 
-  // Navigation
-  const [view, setView] = useState<"dashboard" | "goal" | "settings" | "ai" | "analytics">("dashboard");
+  // NEW: Expense & Budget data
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+
+  // NEW: Gamification
+  const [streak, setStreak] = useState<SavingsStreak>({ currentStreak: 0, longestStreak: 0, lastDepositDate: null, totalDepositDays: 0 });
+  const [badges, setBadges] = useState<Badge[]>([]);
+  const [newBadgeToast, setNewBadgeToast] = useState<Badge | null>(null);
+
+  // Navigation — includes new views
+  const [view, setView] = useState<"dashboard" | "goal" | "settings" | "ai" | "analytics" | "expenses" | "gamification" | "calculators">("dashboard");
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [showCreateWizard, setShowCreateWizard] = useState(false);
 
@@ -117,14 +132,20 @@ export default function App() {
   // 1. Initial Load & PWA
   useEffect(() => {
     async function init() {
-      const [storedGoals, storedTx, storedSettings] = await Promise.all([
+      const [storedGoals, storedTx, storedSettings, storedExpenses, storedBudgets] = await Promise.all([
         getAllGoals(),
         getAllTransactions(),
-        getSettings()
+        getSettings(),
+        getAllExpenses(),
+        getAllBudgets()
       ]);
       setGoals(storedGoals);
       setTransactions(storedTx);
       setSettings(storedSettings);
+      setExpenses(storedExpenses);
+      setBudgets(storedBudgets);
+      setStreak(getStreak());
+      setBadges(getBadges());
       setReady(true);
     }
     init();
@@ -225,14 +246,69 @@ export default function App() {
   }
 
   async function refreshData() {
-    const [storedGoals, storedTx, storedSettings] = await Promise.all([
+    const [storedGoals, storedTx, storedSettings, storedExpenses, storedBudgets] = await Promise.all([
       getAllGoals(),
       getAllTransactions(),
-      getSettings()
+      getSettings(),
+      getAllExpenses(),
+      getAllBudgets()
     ]);
     setGoals(storedGoals);
     setTransactions(storedTx);
     setSettings(storedSettings);
+    setExpenses(storedExpenses);
+    setBudgets(storedBudgets);
+    setBadges(getBadges());
+    setStreak(getStreak());
+  }
+
+  // Badge check helper
+  function checkAndAwardBadges(opts: {
+    goalsCount?: number;
+    completedCount?: number;
+    depositCount?: number;
+    newStreak?: SavingsStreak;
+    pct?: number;
+  }) {
+    const newBadges: Badge[] = [];
+    const currentBadges = getBadges();
+    const wasEarned = (id: string) => currentBadges.find(b => b.id === id)?.earnedAt;
+
+    if (opts.goalsCount !== undefined && opts.goalsCount >= 1 && !wasEarned("first_goal")) {
+      if (awardBadge("first_goal")) newBadges.push(getBadges().find(b => b.id === "first_goal")!);
+    }
+    if (opts.goalsCount !== undefined && opts.goalsCount >= 5 && !wasEarned("five_goals")) {
+      if (awardBadge("five_goals")) newBadges.push(getBadges().find(b => b.id === "five_goals")!);
+    }
+    if (opts.depositCount !== undefined && opts.depositCount >= 1 && !wasEarned("first_deposit")) {
+      if (awardBadge("first_deposit")) newBadges.push(getBadges().find(b => b.id === "first_deposit")!);
+    }
+    if (opts.depositCount !== undefined && opts.depositCount >= 10 && !wasEarned("consistent_saver")) {
+      if (awardBadge("consistent_saver")) newBadges.push(getBadges().find(b => b.id === "consistent_saver")!);
+    }
+    if (opts.newStreak !== undefined && opts.newStreak.currentStreak >= 7 && !wasEarned("streak_7")) {
+      if (awardBadge("streak_7")) newBadges.push(getBadges().find(b => b.id === "streak_7")!);
+    }
+    if (opts.newStreak !== undefined && opts.newStreak.currentStreak >= 30 && !wasEarned("streak_30")) {
+      if (awardBadge("streak_30")) newBadges.push(getBadges().find(b => b.id === "streak_30")!);
+    }
+    if (opts.completedCount !== undefined && opts.completedCount >= 1 && !wasEarned("goal_completed")) {
+      if (awardBadge("goal_completed")) newBadges.push(getBadges().find(b => b.id === "goal_completed")!);
+    }
+    if (opts.completedCount !== undefined && opts.completedCount >= 3 && !wasEarned("three_completed")) {
+      if (awardBadge("three_completed")) newBadges.push(getBadges().find(b => b.id === "three_completed")!);
+    }
+    if (opts.pct !== undefined && opts.pct >= 50 && !wasEarned("halfway_hero")) {
+      if (awardBadge("halfway_hero")) newBadges.push(getBadges().find(b => b.id === "halfway_hero")!);
+    }
+    if (opts.pct !== undefined && opts.pct >= 75 && !wasEarned("savings_champion")) {
+      if (awardBadge("savings_champion")) newBadges.push(getBadges().find(b => b.id === "savings_champion")!);
+    }
+    if (newBadges.length > 0) {
+      setBadges(getBadges());
+      const validBadge = newBadges.find(b => b != null);
+      if (validBadge) setNewBadgeToast(validBadge);
+    }
   }
 
   // Financial Capacity
@@ -350,6 +426,9 @@ export default function App() {
     setView("goal");
     triggerHaptic("success");
     showToast("Your savings plan is ready.");
+    // Check badges after goal creation
+    const allGoals = await getAllGoals();
+    checkAndAwardBadges({ goalsCount: allGoals.length });
   }
 
   async function handleTransaction(
@@ -379,8 +458,24 @@ export default function App() {
       const newPct = targetAmount > 0 ? (newAmount / targetAmount) * 100 : 0;
 
       if (type === "deposit") {
+        // Update streak for deposit
+        const today = dateInput();
+        const newStreak = updateStreak(today);
+        setStreak(newStreak);
         triggerHaptic("light");
         const roundedPct = Math.min(100, Math.round(newPct));
+
+        // Check gamification badges
+        const allTx = await getAllTransactions();
+        const depositTxCount = allTx.filter(t => t.type === "deposit").length;
+        const allGoals = await getAllGoals();
+        const completedCount = allGoals.filter(g => g.status === "completed").length;
+        checkAndAwardBadges({
+          depositCount: depositTxCount,
+          newStreak,
+          completedCount,
+          pct: Math.round(newPct)
+        });
 
         // 1. Check 100% Goal Completion Celebration
         if (newAmount >= targetAmount && !targetGoal.celebratedMilestones?.includes(100)) {
@@ -543,6 +638,35 @@ export default function App() {
     reader.readAsText(file);
   }
 
+  // Expense & Budget handlers
+  async function handleAddExpense(expense: Expense) {
+    await saveExpense(expense);
+    await refreshData();
+  }
+
+  async function handleDeleteExpense(id: string) {
+    await deleteExpense(id);
+    await refreshData();
+    showToast("Expense deleted.", "info");
+  }
+
+  async function handleSaveBudget(budget: Budget) {
+    await saveBudget(budget);
+    await refreshData();
+    showToast("Budget saved.");
+  }
+
+  async function handleDeleteBudget(id: string) {
+    await deleteBudget(id);
+    await refreshData();
+    showToast("Budget removed.", "info");
+  }
+
+  // Total deposited across all transactions
+  const totalDeposited = useMemo(() => {
+    return transactions.filter(t => t.type === "deposit").reduce((s, t) => s + t.amount, 0);
+  }, [transactions]);
+
   if (!ready) {
     return (
       <div className="min-h-screen grid place-items-center bg-white dark:bg-[#000000]">
@@ -554,6 +678,17 @@ export default function App() {
     );
   }
 
+  // Bottom Nav tab definition
+  const mainTabs = [
+    { id: "dashboard", label: "Home", icon: Home },
+    { id: "analytics", label: "Analytics", icon: BarChart3 },
+    { id: "expenses", label: "Expenses", icon: TrendingDown },
+    { id: "gamification", label: "Badges", icon: Trophy },
+    { id: "settings", label: "Settings", icon: Settings },
+  ] as const;
+
+  const isMainView = ["dashboard", "analytics", "expenses", "gamification", "settings"].includes(view);
+
   return (
     <div className={`min-h-screen transition-colors duration-150 ${isDark ? "dark bg-[#000000] text-zinc-100" : "bg-zinc-50 text-zinc-900"}`}>
       {/* Offline Status Warning Pill */}
@@ -564,52 +699,45 @@ export default function App() {
         </div>
       )}
 
-      {/* Main App Header */}
-      <header className="sticky top-0 z-30 border-b border-zinc-200/90 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-[#000000]/95">
+      {/* Main App Header — compact on mobile */}
+      <header className="sticky top-0 z-30 border-b border-zinc-200/90 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-[#000000]/95 pwa-header">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <button
             onClick={() => { setView("dashboard"); setSelectedGoalId(null); }}
             className="flex items-center gap-2.5 text-left focus-visible:rounded-lg"
           >
-            {/* User's Exact Squircle Target Icon */}
-            <NestSaveLogo size={36} />
+            <NestSaveLogo size={34} />
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <span className="font-extrabold text-base tracking-tight">NestSave</span>
-                <span className="rounded-md bg-zinc-100 px-1.5 py-0.5 text-[10px] font-bold text-zinc-600 dark:bg-[#18181b] dark:text-zinc-300">
-                  Local-First
-                </span>
+                {streak.currentStreak >= 3 && (
+                  <span className="rounded-full bg-orange-100 dark:bg-orange-950/40 px-1.5 py-0.5 text-[10px] font-bold text-orange-600 dark:text-orange-400">
+                    🔥 {streak.currentStreak}d
+                  </span>
+                )}
               </div>
-              <p className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
+              <p className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 hidden sm:block">
                 Zero Cloud Savings Planner
               </p>
             </div>
           </button>
 
           <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mr-2">
-              <ShieldCheck size={14} className="text-[#0d684c] dark:text-emerald-400" />
-              <span>Device-only vault</span>
-            </div>
+            {/* Streak indicator on mobile */}
+            {streak.currentStreak >= 1 && (
+              <button
+                onClick={() => setView("gamification")}
+                className="flex items-center gap-1 rounded-full bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/40 px-2.5 py-1.5 text-xs font-bold text-orange-600 dark:text-orange-400 sm:hidden"
+              >
+                <Flame size={12} />
+                {streak.currentStreak}
+              </button>
+            )}
 
-            {/* Analytics & Charts button */}
-            <button
-              onClick={() => setView("analytics")}
-              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
-                view === "analytics"
-                  ? "border-[#0d684c] bg-emerald-50 text-[#0d684c] dark:border-emerald-500 dark:bg-[#18181b] dark:text-emerald-300"
-                  : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-[#18181b] dark:text-zinc-300 dark:hover:bg-[#202024]"
-              }`}
-              title="Financial Analytics & Charts"
-            >
-              <BarChart3 size={15} />
-              <span className="hidden sm:inline">Analytics</span>
-            </button>
-
-            {/* AI Assistant button */}
+            {/* AI button — desktop only in header, mobile via bottom nav */}
             <button
               onClick={() => setView("ai")}
-              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+              className={`hidden sm:flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
                 view === "ai"
                   ? "border-[#0d684c] bg-emerald-50 text-[#0d684c] dark:border-emerald-500 dark:bg-[#18181b] dark:text-emerald-300"
                   : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-[#18181b] dark:text-zinc-300 dark:hover:bg-[#202024]"
@@ -617,34 +745,20 @@ export default function App() {
               title="Local Financial Assistant"
             >
               <Bot size={15} />
-              <span className="hidden sm:inline">Local AI</span>
+              <span>AI</span>
             </button>
 
-            {/* Install PWA button (shown if not running in standalone app mode) */}
+            {/* Install PWA button */}
             {!isStandalone && (
               <button
                 onClick={triggerInstallApp}
-                className="flex items-center gap-1.5 rounded-xl border border-[#0d684c]/40 bg-emerald-50 px-2.5 py-2 text-xs font-semibold text-[#0d684c] hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 transition"
+                className="hidden sm:flex items-center gap-1.5 rounded-xl border border-[#0d684c]/40 bg-emerald-50 px-2.5 py-2 text-xs font-semibold text-[#0d684c] hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 transition"
                 title="Install NestSave App to Phone or Desktop"
               >
                 <Smartphone size={15} />
-                <span className="hidden sm:inline">Install App</span>
+                <span>Install</span>
               </button>
             )}
-
-            {/* Settings button */}
-            <button
-              onClick={() => setView("settings")}
-              aria-label="Settings"
-              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition ${
-                view === "settings"
-                  ? "border-[#0d684c] bg-emerald-50 text-[#0d684c] dark:border-emerald-500 dark:bg-[#18181b] dark:text-emerald-300"
-                  : "border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-[#18181b] dark:text-zinc-300 dark:hover:bg-[#202024]"
-              }`}
-              title="Preferences & Data"
-            >
-              <Settings size={16} />
-            </button>
 
             {/* Create Goal button */}
             <button
@@ -652,14 +766,15 @@ export default function App() {
               className="btn-primary !py-2 text-xs font-bold"
             >
               <Plus size={15} />
-              <span>Create Goal</span>
+              <span className="hidden sm:inline">Create Goal</span>
+              <span className="sm:hidden">New</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* Main View Area */}
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 pb-28">
         {/* VIEW 1: DASHBOARD */}
         {view === "dashboard" && (
           <>
@@ -951,7 +1066,56 @@ export default function App() {
             onOpenSettings={() => setView("settings")}
           />
         )}
+
+        {/* VIEW 6: EXPENSE TRACKER */}
+        {view === "expenses" && (
+          <ExpenseTrackerView
+            expenses={expenses}
+            budgets={budgets}
+            onBack={() => setView("dashboard")}
+            onAddExpense={handleAddExpense}
+            onDeleteExpense={handleDeleteExpense}
+            onSaveBudget={handleSaveBudget}
+            onDeleteBudget={handleDeleteBudget}
+          />
+        )}
+
+        {/* VIEW 7: GAMIFICATION & BADGES */}
+        {view === "gamification" && (
+          <GamificationView
+            badges={badges}
+            streak={streak}
+            goals={goals}
+            totalDeposited={totalDeposited}
+            onBack={() => setView("dashboard")}
+          />
+        )}
       </main>
+
+      {/* ========== BOTTOM NAVIGATION BAR ========== */}
+      <nav className="bottom-nav" role="navigation" aria-label="Main navigation">
+        {mainTabs.map(({ id, label, icon: Icon }) => {
+          const isActive = view === id || (id === "dashboard" && view === "goal") || (id === "dashboard" && view === "ai") || (id === "dashboard" && view === "calculators");
+          return (
+            <button
+              key={id}
+              className={`bottom-nav-item ${isActive ? "active" : ""}`}
+              onClick={() => {
+                if (id === "dashboard") {
+                  setView("dashboard");
+                  setSelectedGoalId(null);
+                } else {
+                  setView(id as any);
+                }
+              }}
+              aria-label={label}
+            >
+              <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
+              <span>{label}</span>
+            </button>
+          );
+        })}
+      </nav>
 
       {/* 5-Step Goal Creation Wizard Modal */}
       {showCreateWizard && (
@@ -991,15 +1155,15 @@ export default function App() {
         />
       )}
 
-      {/* Reusable Toast with Undo */}
+      {/* Reusable Toast with Undo — positioned above bottom nav */}
       {toast && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-semibold text-zinc-900 shadow-xl dark:border-zinc-800 dark:bg-[#121212] dark:text-zinc-100 animate-in fade-in duration-150">
+        <div className="fixed bottom-24 left-4 right-4 sm:bottom-5 sm:left-auto sm:right-5 sm:w-auto z-50 flex items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-semibold text-zinc-900 shadow-xl dark:border-zinc-800 dark:bg-[#121212] dark:text-zinc-100 animate-in fade-in duration-150">
           {toast.type === "error" ? (
-            <AlertCircle size={16} className="text-rose-500" />
+            <AlertCircle size={16} className="text-rose-500 shrink-0" />
           ) : toast.type === "warning" ? (
-            <AlertTriangle size={16} className="text-amber-500" />
+            <AlertTriangle size={16} className="text-amber-500 shrink-0" />
           ) : (
-            <CheckCircle2 size={16} className="text-[#0d684c] dark:text-emerald-400" />
+            <CheckCircle2 size={16} className="text-[#0d684c] dark:text-emerald-400 shrink-0" />
           )}
 
           <span className="flex-1">{toast.message}</span>
@@ -1023,6 +1187,23 @@ export default function App() {
           >
             <X size={14} />
           </button>
+        </div>
+      )}
+
+      {/* New Badge Toast notification */}
+      {newBadgeToast && (
+        <div className="fixed bottom-24 left-4 right-4 sm:bottom-20 sm:left-auto sm:right-5 sm:w-80 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex items-center gap-3 rounded-2xl border border-amber-200 dark:border-amber-800/40 bg-white dark:bg-[#121212] px-4 py-3.5 shadow-2xl">
+            <span className="text-3xl shrink-0">{newBadgeToast.icon}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Badge Unlocked!</p>
+              <p className="text-sm font-bold text-zinc-900 dark:text-white">{newBadgeToast.name}</p>
+              <p className="text-[11px] text-zinc-400 truncate">{newBadgeToast.description}</p>
+            </div>
+            <button onClick={() => setNewBadgeToast(null)} className="text-zinc-300 hover:text-zinc-500 dark:text-zinc-600">
+              <X size={14} />
+            </button>
+          </div>
         </div>
       )}
     </div>
