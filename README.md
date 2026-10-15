@@ -21,6 +21,10 @@ NestSave plans, tracks, and protects your financial goals entirely on your perso
 <a href="https://github.com/jojin1709/NestSave-Savings-Planner/releases/tag/v1.0.0" target="_blank">
   <img src="https://img.shields.io/badge/GitHub%20Release-v1.0.0-18181b?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Release" />
 </a>
+&nbsp;&nbsp;
+<a href="./LICENSE">
+  <img src="https://img.shields.io/badge/License-MIT-0d684c?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="MIT License" />
+</a>
 
 <br /><br />
 
@@ -272,6 +276,8 @@ Go to **Settings → Encrypted Vault Backup**, set a secure password, and export
 
 **Built with pride by [Jojin John](https://github.com/jojin1709)**  
 NestSave is an independent software project crafted with care as a private, high-integrity alternative to commercial data-harvesting finance platforms.
+
+This project is open source and available under the [MIT License](./LICENSE).
 
 Copyright © 2026 **Jojin John**. All rights reserved.
 
