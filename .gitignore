@@ -4,3 +4,12 @@ out
 .env*
 .DS_Store
 npm-debug.log*
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/*.png
+android/local.properties
+*.apk
+!public/downloads/*.apk

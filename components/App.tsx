@@ -975,6 +975,16 @@ export default function App() {
               <span>AI</span>
             </button>
 
+            {/* Download Native Android App */}
+            <a
+              href="/download"
+              className="flex items-center gap-1.5 rounded-xl border border-emerald-600/30 bg-emerald-600/10 px-2.5 sm:px-3 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-600/20 transition"
+              title="Download Native Android APK"
+            >
+              <Download size={15} />
+              <span className="hidden sm:inline">Get APK</span>
+            </a>
+
             {/* Install PWA button */}
             {!isStandalone && (
               <button
