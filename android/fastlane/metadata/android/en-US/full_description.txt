@@ -1,0 +1,13 @@
+NestSave is a deterministic, 100% offline-first personal savings planner and wealth roadmap engine designed for maximum privacy and zero cloud dependence.
+
+Your savings balances, financial targets, and transactions are stored entirely on your device in an encrypted Room SQLite database. No accounts, no servers, no bank scraping, and zero tracking.
+
+Key Capabilities:
+• 100% Offline Architecture: Runs without internet connection. Zero tracking scripts, zero ads, zero telemetry.
+• Hardware Biometric Lock: Secure your vault behind native fingerprint or 3D facial recognition authentication.
+• Indian Banking Calculators: Mathematical precision for Recurring Deposits (quarterly compounding formula matching SBI/HDFC/ICICI) and Fixed Deposits.
+• 1-Click Plan Recalibration: Algorithmic shortfall recovery to adjust deadlines or monthly deposits when life changes.
+• Salary-Day Batch Allocator: Distribute monthly savings across multiple active goals in one tap based on priority weighting.
+• Milestone Streaks & Badges: Stay motivated with daily streaks and unlocked achievements.
+• Client-Side Vault Backups: Export and restore password-protected AES-GCM 256 backup archives.
+• Android 15 & 16 KB Page Aligned: Modern Linux ELF binaries optimized for 120Hz smooth performance.

@@ -1,0 +1,6 @@
+• Initial release of NestSave Native Android App
+• 100% offline Room SQLite database
+• Hardware Biometric Vault Lock
+• Indian Bank RD & FD compound maturity calculators
+• 1-Click Plan Recalibration & Salary-Day batch deposits
+• In-App Automated Update Engine

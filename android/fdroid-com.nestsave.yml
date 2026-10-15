@@ -1,0 +1,40 @@
+Categories:
+  - Money
+  - Finance
+License: MIT
+AuthorName: Jojin John
+AuthorWebSite: https://www.linkedin.com/in/jojin-john/
+WebSite: https://nestsave.vercel.app
+SourceCode: https://github.com/jojin1709/NestSave-Savings-Planner
+IssueTracker: https://github.com/jojin1709/NestSave-Savings-Planner/issues
+Changelog: https://github.com/jojin1709/NestSave-Savings-Planner/blob/master/CHANGELOG.md
+
+AutoName: NestSave
+Summary: Private, 100% offline-first savings goal planner with zero cloud tracking.
+Description: |-
+  NestSave is a deterministic, 100% offline-first personal savings planner and wealth
+  roadmap engine designed for maximum privacy and zero cloud dependence.
+
+  Key Features:
+  * 100% Offline-first with local Room SQLite storage.
+  * Hardware Biometric Vault Lock (fingerprint & face unlock).
+  * Indian Bank Recurring Deposit (RD) quarterly compounding & FD calculations.
+  * 1-Click Plan Recalibration for behind-schedule goals.
+  * Salary-Day batch deposits and priority weighting.
+  * Zero ads, zero telemetry, zero cloud tracking.
+
+RepoType: git
+Repo: https://github.com/jojin1709/NestSave-Savings-Planner.git
+
+Builds:
+  - versionName: '1.0.0'
+    versionCode: 1
+    commit: v1.0.0
+    subdir: android/app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: '1.0.0'
+CurrentVersionCode: 1
