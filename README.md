@@ -158,10 +158,15 @@ NestSave
 │
 ├── components/
 │   ├── App.tsx             — Full application UI and state
-│   ├── CalculatorsView.tsx — Savings vs EMI, SIP, and Emergency buffer calculators
+│   ├── CalculatorsView.tsx — Savings vs EMI, SIP, Bank RD, and Fixed Deposit (FD)
 │   ├── AnalyticsView.tsx   — Trajectory charts, burn rates, and breakdowns
 │   ├── ExpenseTrackerView.tsx — Monthly expense logger and budget limits
 │   ├── GamificationView.tsx— Savings streaks and achievement badges
+│   ├── AppLockModal.tsx    — 4-digit security PIN lock screen
+│   ├── SalaryDayBatchModal.tsx — 1-tap salary day batch allocation modal
+│   ├── RecalibratePlanModal.tsx— 1-click plan recalibration (Keep Deadline vs Pace)
+│   ├── PrintStatementModal.tsx — Printable PDF financial statements and certificates
+│   ├── EncryptedVaultModal.tsx — Password-encrypted AES-GCM vault backup & restore
 │   ├── NestSaveLogo.tsx    — Official squircle SVG logo
 │   ├── GoalCategoryIcon.tsx — Lucide icon mapper for goal types
 │   ├── GoalCompletionModal.tsx — 100% celebration screen
@@ -169,7 +174,8 @@ NestSave
 │   └── Confetti.tsx        — Lightweight canvas confetti
 │
 ├── lib/
-│   ├── calculations.ts     — Pure deterministic math engine
+│   ├── calculations.ts     — Pure deterministic math engine (RD, FD, EMI, SIP, inflation)
+│   ├── security.ts         — Web Crypto API (SHA-256 PIN hashing, AES-GCM 256, PBKDF2)
 │   ├── storage.ts          — IndexedDB + localStorage persistence
 │   ├── types.ts            — Domain types and interfaces
 │   └── ai-assistant.ts     — On-device financial query engine
