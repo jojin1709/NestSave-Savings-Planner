@@ -10,7 +10,7 @@ NestSave plans, tracks, and protects your financial goals entirely on your perso
 
 <br />
 
-<a href="https://trendshift.io/repositories/26416?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-26416" target="_blank" rel="noopener noreferrer">
+<a href="https://trendshift.io/repositories/306116?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-306116" target="_blank" rel="noopener noreferrer">
   <img src="./public/trendshift-badge.svg" alt="NestSave | Trendshift #1 Repository of the Day" width="250" height="55" />
 </a>
 
