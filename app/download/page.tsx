@@ -49,7 +49,7 @@ export default function DownloadPage() {
               Open Web App →
             </Link>
             <a
-              href="https://github.com/jojin1709/NestSave-Savings-Planner-v1"
+              href="https://github.com/jojin1709/NestSave-Savings-Planner"
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-zinc-300 hover:text-white px-3.5 py-2 rounded-xl border border-zinc-800 hover:border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800/80 transition-all"
@@ -122,7 +122,7 @@ export default function DownloadPage() {
 
               {/* GitHub Releases secondary */}
               <a
-                href="https://github.com/jojin1709/NestSave-Savings-Planner-v1/releases/tag/v1.0.0"
+                href="https://github.com/jojin1709/NestSave-Savings-Planner/releases/tag/v1.0.0"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-5 py-4 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-200 font-semibold text-sm flex items-center justify-center gap-2.5 transition-all"

@@ -18,7 +18,7 @@ NestSave plans, tracks, and protects your financial goals entirely on your perso
   <img src="https://img.shields.io/badge/Download%20APK-Android%20v1.0.0-10B981?style=for-the-badge&logo=android&logoColor=white" alt="Download Android APK" />
 </a>
 &nbsp;&nbsp;
-<a href="https://github.com/jojin1709/NestSave-Savings-Planner-v1/releases/tag/v1.0.0" target="_blank">
+<a href="https://github.com/jojin1709/NestSave-Savings-Planner/releases/tag/v1.0.0" target="_blank">
   <img src="https://img.shields.io/badge/GitHub%20Release-v1.0.0-18181b?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Release" />
 </a>
 
@@ -47,7 +47,7 @@ https://nestsave.vercel.app/download
 > **Zero Fabricated Data Policy:** NestSave ships with a completely clean slate. There are no synthetic balances, fake transactions, or mock charts. Every calculation and milestone reflects your real data.
 
 > [!TIP]
-> **Native Android App (v1.0.0):** Download the standalone signed APK directly from [/download](https://nestsave.vercel.app/download) or [GitHub Releases](https://github.com/jojin1709/NestSave-Savings-Planner-v1/releases/tag/v1.0.0) with hardware biometric unlock and zero internet permissions required.
+> **Native Android App (v1.0.0):** Download the standalone signed APK directly from [/download](https://nestsave.vercel.app/download) or [GitHub Releases](https://github.com/jojin1709/NestSave-Savings-Planner/releases/tag/v1.0.0) with hardware biometric unlock and zero internet permissions required.
 
 ---
 
@@ -279,7 +279,7 @@ Copyright © 2026 **Jojin John**. All rights reserved.
 
 <br />
 
-**[Launch NestSave Web App](https://nestsave.vercel.app)** • **[Download Android APK](https://nestsave.vercel.app/download)** • **[GitHub Releases](https://github.com/jojin1709/NestSave-Savings-Planner-v1/releases)**
+**[Launch NestSave Web App](https://nestsave.vercel.app)** • **[Download Android APK](https://nestsave.vercel.app/download)** • **[GitHub Releases](https://github.com/jojin1709/NestSave-Savings-Planner/releases)**
 
 *Your savings. Your device. Your rules.*
 
