@@ -11,6 +11,12 @@ interface GamificationViewProps {
   goals: Goal[];
   totalDeposited: number;
   onBack: () => void;
+  onStartChallenge?: (challenge: {
+    name: string;
+    targetAmount: number;
+    targetDate: string;
+    note: string;
+  }) => void;
 }
 
 function StreakRing({ value, max, label, color }: { value: number; max: number; label: string; color: string }) {
@@ -42,7 +48,7 @@ function StreakRing({ value, max, label, color }: { value: number; max: number; 
   );
 }
 
-export default function GamificationView({ badges, streak, goals, totalDeposited, onBack }: GamificationViewProps) {
+export default function GamificationView({ badges, streak, goals, totalDeposited, onBack, onStartChallenge }: GamificationViewProps) {
   const earnedBadges = useMemo(() => badges.filter(b => b.earnedAt), [badges]);
   const unearnedBadges = useMemo(() => badges.filter(b => !b.earnedAt), [badges]);
   const completedGoals = useMemo(() => goals.filter(g => g.status === "completed").length, [goals]);
@@ -243,28 +249,93 @@ export default function GamificationView({ badges, streak, goals, totalDeposited
 
       {/* Savings Challenges */}
       <div className="finance-card p-5">
-        <div className="flex items-center gap-2 pb-3 border-b border-zinc-100 dark:border-zinc-800 mb-4">
-          <Calendar size={16} className="text-[#0d684c] dark:text-emerald-400" />
-          <h2 className="font-bold text-sm">Savings Challenges</h2>
+        <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800 mb-4">
+          <div className="flex items-center gap-2">
+            <Calendar size={16} className="text-[#0d684c] dark:text-emerald-400" />
+            <h2 className="font-bold text-sm">Savings Challenges & Habit Sprints</h2>
+          </div>
+          <span className="text-[10px] text-zinc-400">Pre-built schedules</span>
         </div>
         <div className="space-y-3">
           {[
-            { name: "52-Week Challenge", desc: "Save ₹100 in week 1, ₹200 in week 2... reaching ₹5,200 by year end", emoji: "📅", total: "₹1,37,800" },
-            { name: "No-Spend Sunday", desc: "Commit to spending ₹0 every Sunday this month", emoji: "🚫", total: "4 Sundays" },
-            { name: "Round-Up Saver", desc: "Round every purchase up to nearest ₹100 and save the difference", emoji: "🔄", total: "Ongoing" },
-            { name: "Daily ₹50 Challenge", desc: "Save just ₹50 every single day — ₹18,250 by year end", emoji: "⭐", total: "₹18,250/yr" },
-          ].map(c => (
-            <div key={c.name} className="flex items-start gap-3 rounded-xl border border-zinc-100 dark:border-zinc-800 p-3">
-              <span className="text-xl shrink-0">{c.emoji}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">{c.name}</p>
-                  <span className="text-[10px] font-bold text-[#0d684c] dark:text-emerald-400 shrink-0 ml-2">{c.total}</span>
+            {
+              name: "52-Week Challenge",
+              desc: "Save incrementally each week: ₹100 week 1, ₹200 week 2... reaching ₹5,200 in week 52.",
+              emoji: "📅",
+              targetAmount: 137800,
+              durationDays: 365,
+              note: "52-Week Challenge saving ₹100, ₹200... up to ₹5,200/wk."
+            },
+            {
+              name: "30-Day Momentum Kickstart",
+              desc: "Deposit ₹500 every day for 30 consecutive days to establish ironclad savings discipline.",
+              emoji: "⚡",
+              targetAmount: 15000,
+              durationDays: 30,
+              note: "30-Day habit sprint depositing ₹500 daily."
+            },
+            {
+              name: "Daily ₹50 Habit Builder",
+              desc: "Save just ₹50 every single day without feeling any pinch — accumulates ₹18,250 in 1 year.",
+              emoji: "⭐",
+              targetAmount: 18250,
+              durationDays: 365,
+              note: "Daily ₹50 habit builder for 365 days."
+            },
+            {
+              name: "100-Day ₹25K Reserve",
+              desc: "Deposit ₹250 per day for 100 days to build a fast ₹25,000 emergency buffer.",
+              emoji: "🎯",
+              targetAmount: 25000,
+              durationDays: 100,
+              note: "100-Day sprint building ₹25,000 cash reserve."
+            }
+          ].map(c => {
+            const isAlreadyActive = goals.some(g => g.name === c.name && g.status === "active");
+            return (
+              <div
+                key={c.name}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-zinc-100 dark:border-zinc-800 p-3.5 hover:border-zinc-200 dark:hover:border-zinc-700 transition"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl shrink-0 mt-0.5">{c.emoji}</span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-bold text-zinc-900 dark:text-white">{c.name}</p>
+                      <span className="text-[10px] font-bold text-[#0d684c] dark:text-emerald-400 bg-emerald-50 dark:bg-[#18181b] px-2 py-0.5 rounded-md border border-emerald-500/20">
+                        {formatINR(c.targetAmount)}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-zinc-500 leading-relaxed mt-0.5">{c.desc}</p>
+                  </div>
                 </div>
-                <p className="text-[10px] text-zinc-400 leading-relaxed mt-0.5">{c.desc}</p>
+
+                <div className="shrink-0 self-end sm:self-center">
+                  {isAlreadyActive ? (
+                    <span className="text-[11px] font-bold text-[#0d684c] dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800/40 flex items-center gap-1">
+                      ✓ Active Challenge
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + c.durationDays);
+                        onStartChallenge?.({
+                          name: c.name,
+                          targetAmount: c.targetAmount,
+                          targetDate: d.toISOString().slice(0, 10),
+                          note: c.note
+                        });
+                      }}
+                      className="btn-primary !py-1.5 !px-3 text-xs font-bold"
+                    >
+                      Start Challenge
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

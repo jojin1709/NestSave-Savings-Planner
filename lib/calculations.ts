@@ -473,3 +473,138 @@ export function calculateEmergencyFund(
     tier12Months: base * 12
   };
 }
+
+export interface RDCalculationResult {
+  monthlyDeposit: number;
+  totalInvested: number;
+  totalInterestEarned: number;
+  maturityValue: number;
+  tenureMonths: number;
+  annualInterestRate: number;
+}
+
+/**
+ * Calculates Recurring Deposit (RD) maturity with quarterly compounding
+ * (Standard Indian Bank formula used by SBI, Post Office, HDFC, ICICI).
+ */
+export function calculateRD(
+  monthlyDeposit: number,
+  annualInterestRate: number,
+  tenureMonths: number
+): RDCalculationResult {
+  const p = Math.max(0, Math.round(monthlyDeposit));
+  const n = Math.max(1, Math.round(tenureMonths));
+  const rate = Math.max(0, annualInterestRate);
+  const totalInvested = p * n;
+
+  if (p === 0 || rate === 0) {
+    return {
+      monthlyDeposit: p,
+      totalInvested,
+      totalInterestEarned: 0,
+      maturityValue: totalInvested,
+      tenureMonths: n,
+      annualInterestRate: rate
+    };
+  }
+
+  // Quarterly compounding rate: i = R / 400
+  const i = rate / 400;
+  let maturityValue = 0;
+  for (let k = 1; k <= n; k++) {
+    const monthsRemaining = n - k + 1;
+    const quarters = monthsRemaining / 3;
+    maturityValue += p * Math.pow(1 + i, quarters);
+  }
+
+  const roundedMaturity = Math.round(maturityValue);
+  const totalInterestEarned = Math.max(0, roundedMaturity - totalInvested);
+
+  return {
+    monthlyDeposit: p,
+    totalInvested,
+    totalInterestEarned,
+    maturityValue: roundedMaturity,
+    tenureMonths: n,
+    annualInterestRate: rate
+  };
+}
+
+export interface FDCalculationResult {
+  principal: number;
+  totalInterestEarned: number;
+  maturityValue: number;
+  tenureMonths: number;
+  annualInterestRate: number;
+}
+
+/**
+ * Calculates Fixed Deposit (FD) maturity with quarterly compounding.
+ */
+export function calculateFD(
+  principal: number,
+  annualInterestRate: number,
+  tenureMonths: number
+): FDCalculationResult {
+  const p = Math.max(0, Math.round(principal));
+  const n = Math.max(1, Math.round(tenureMonths));
+  const rate = Math.max(0, annualInterestRate);
+
+  if (p === 0 || rate === 0) {
+    return {
+      principal: p,
+      totalInterestEarned: 0,
+      maturityValue: p,
+      tenureMonths: n,
+      annualInterestRate: rate
+    };
+  }
+
+  const quarters = n / 3;
+  const i = rate / 400;
+  const maturityValue = Math.round(p * Math.pow(1 + i, quarters));
+  const totalInterestEarned = Math.max(0, maturityValue - p);
+
+  return {
+    principal: p,
+    totalInterestEarned,
+    maturityValue,
+    tenureMonths: n,
+    annualInterestRate: rate
+  };
+}
+
+export interface InflationCalculationResult {
+  currentCost: number;
+  annualInflationRate: number;
+  years: number;
+  futureCost: number;
+  additionalCostNeeded: number;
+  purchasingPowerRetainedPct: number;
+}
+
+/**
+ * Calculates the future cost adjusted for annual inflation.
+ */
+export function calculateInflationAdjustedTarget(
+  currentCost: number,
+  annualInflationRate = 6,
+  years = 1
+): InflationCalculationResult {
+  const cost = Math.max(0, Math.round(currentCost));
+  const rate = Math.max(0, annualInflationRate);
+  const y = Math.max(0.1, years);
+
+  const futureCost = Math.round(cost * Math.pow(1 + rate / 100, y));
+  const additionalCostNeeded = Math.max(0, futureCost - cost);
+  const purchasingPowerRetainedPct = futureCost > 0 ? Math.round((cost / futureCost) * 100) : 100;
+
+  return {
+    currentCost: cost,
+    annualInflationRate: rate,
+    years: y,
+    futureCost,
+    additionalCostNeeded,
+    purchasingPowerRetainedPct
+  };
+}

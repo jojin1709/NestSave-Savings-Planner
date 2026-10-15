@@ -521,3 +521,27 @@ html.dark ::-webkit-scrollbar-thumb:hover {
     transition-duration: 0s !important;
   }
 }
+
+/* ============================================================
+   PRINT STYLES (PDF & PAPER REPORTS)
+   ============================================================ */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  header, nav, .bottom-nav, .no-print, button:not(.print-include) {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .finance-card {
+    border: 1px solid #e4e4e7 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+}
+

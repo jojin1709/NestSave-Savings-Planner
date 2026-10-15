@@ -9,7 +9,8 @@ import {
   Flame, Award, AlertCircle, CheckCircle2, Clock, Percent, TrendingUp,
   FileSpreadsheet, AlertTriangle, Calendar, Repeat, PlayCircle, Bot,
   PauseCircle, CheckCircle, RefreshCw, Cpu, Wifi, WifiOff, Undo2, Target,
-  Smartphone, Share, BarChart3, TrendingDown, Trophy, Home, Calculator, Bell
+  Smartphone, Share, BarChart3, TrendingDown, Trophy, Home, Calculator, Bell,
+  Lock, Unlock, Printer, KeyRound
 } from "lucide-react";
 
 import NestSaveLogo from "./NestSaveLogo";
@@ -20,6 +21,12 @@ import AnalyticsView from "./AnalyticsView";
 import ExpenseTrackerView from "./ExpenseTrackerView";
 import GamificationView from "./GamificationView";
 import CalculatorsView from "./CalculatorsView";
+import AppLockModal from "./AppLockModal";
+import SalaryDayBatchModal from "./SalaryDayBatchModal";
+import RecalibratePlanModal from "./RecalibratePlanModal";
+import PrintStatementModal from "./PrintStatementModal";
+import EncryptedVaultModal from "./EncryptedVaultModal";
+import { hashPin, verifyPin } from "../lib/security";
 
 import {
   Goal, Transaction, AppSettings, GoalStatus, GoalType, Priority, SavingsFrequency,
@@ -40,7 +47,8 @@ import {
   requiredDaily, requiredWeekly, requiredMonthly, monthlyGoalRequirement,
   savingsCapacity, feasibility, projectedCompletionDate, currentPace,
   aheadBehindSchedule, suggestedDeadline, conflictDetection,
-  multiGoalAllocation, exportGoalsToCSV, exportTransactionsToCSV
+  multiGoalAllocation, exportGoalsToCSV, exportTransactionsToCSV,
+  calculateInflationAdjustedTarget
 } from "../lib/calculations";
 
 import {
@@ -130,6 +138,16 @@ export default function App() {
     };
   } | null>(null);
 
+  // App Lock State
+  const [isUnlocked, setIsUnlocked] = useState(true);
+
+  // New Feature Modals
+  const [showSalaryDayModal, setShowSalaryDayModal] = useState(false);
+  const [recalibratingGoal, setRecalibratingGoal] = useState<Goal | null>(null);
+  const [showPrintStatement, setShowPrintStatement] = useState(false);
+  const [encryptedModalMode, setEncryptedModalMode] = useState<"export" | "import" | null>(null);
+  const [rawBackupJson, setRawBackupJson] = useState("");
+
   // 1. Initial Load & PWA
   useEffect(() => {
     async function init() {
@@ -147,6 +165,9 @@ export default function App() {
       setBudgets(storedBudgets);
       setStreak(getStreak());
       setBadges(getBadges());
+      if (storedSettings.appLockEnabled && storedSettings.pinHash && storedSettings.pinSalt) {
+        setIsUnlocked(false);
+      }
       setReady(true);
     }
     init();
@@ -689,6 +710,95 @@ export default function App() {
     showToast("Budget removed.", "info");
   }
 
+  // Salary Day Batch Deposit handler
+  async function handleBatchDeposit(allocations: Array<{ goalId: string; amount: number }>) {
+    try {
+      let total = 0;
+      for (const item of allocations) {
+        if (item.amount > 0) {
+          total += item.amount;
+          await addTransactionAndUpdateGoal({
+            goalId: item.goalId,
+            type: "deposit",
+            amount: item.amount,
+            note: "Salary Day Batch Allocation",
+            date: dateInput()
+          });
+        }
+      }
+
+      await refreshData();
+      const today = dateInput();
+      const newStreak = updateStreak(today);
+      setStreak(newStreak);
+      triggerHaptic("success");
+
+      const allTx = await getAllTransactions();
+      const depositTxCount = allTx.filter(t => t.type === "deposit").length;
+      const allGoals = await getAllGoals();
+      const completedCount = allGoals.filter(g => g.status === "completed").length;
+      checkAndAwardBadges({
+        depositCount: depositTxCount,
+        newStreak,
+        completedCount
+      });
+
+      showToast(`Salary Day: ${formatINR(total)} allocated across ${allocations.length} goals!`);
+    } catch (err: any) {
+      showToast(err?.message || "Batch deposit failed", "error");
+    }
+  }
+
+  // Behind-Schedule Recalibration handler
+  async function handleRecalibrateGoal(updatedGoal: Goal) {
+    await saveGoal(updatedGoal);
+    await refreshData();
+    showToast(`Plan for "${updatedGoal.name}" recalibrated!`);
+  }
+
+  // App Lock PIN Handlers
+  async function handleSetAppPin(pin: string) {
+    const { hash, salt } = await hashPin(pin);
+    const newSettings: AppSettings = {
+      ...settings,
+      appLockEnabled: true,
+      pinHash: hash,
+      pinSalt: salt
+    };
+    await saveSettings(newSettings);
+    setSettings(newSettings);
+    showToast("4-Digit PIN Lock is now active.");
+  }
+
+  async function handleRemoveAppPin() {
+    const newSettings: AppSettings = {
+      ...settings,
+      appLockEnabled: false,
+      pinHash: undefined,
+      pinSalt: undefined
+    };
+    await saveSettings(newSettings);
+    setSettings(newSettings);
+    showToast("PIN Lock disabled.", "info");
+  }
+
+  // Decrypted Vault Restore handler
+  async function handleImportDecryptedBackup(json: string) {
+    const result = await importFullBackup(json);
+    if (result.success) {
+      await refreshData();
+      showToast("Encrypted vault successfully decrypted and restored.");
+    } else {
+      showToast(result.error || "Failed to restore backup.", "error");
+    }
+  }
+
+  async function handleOpenEncryptedExport() {
+    const backup = await exportFullBackup();
+    setRawBackupJson(JSON.stringify(backup, null, 2));
+    setEncryptedModalMode("export");
+  }
+
   // Total deposited across all transactions
   const totalDeposited = useMemo(() => {
     return transactions.filter(t => t.type === "deposit").reduce((s, t) => s + t.amount, 0);
@@ -877,6 +987,37 @@ export default function App() {
               </button>
             )}
 
+            {/* Salary Day Batch Allocation */}
+            <button
+              onClick={() => setShowSalaryDayModal(true)}
+              className="flex items-center gap-1.5 rounded-xl border border-emerald-300/50 bg-emerald-50 dark:border-emerald-800/40 dark:bg-emerald-950/30 px-2.5 sm:px-3 py-2 text-xs font-semibold text-[#0d684c] dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition"
+              title="Salary Day Batch Allocator (1-Tap Deposit Across Active Goals)"
+            >
+              <Wallet size={15} />
+              <span className="hidden md:inline">Salary Day</span>
+            </button>
+
+            {/* Printable PDF Statement & Certificates */}
+            <button
+              onClick={() => setShowPrintStatement(true)}
+              className="flex items-center gap-1.5 rounded-xl border border-zinc-300 bg-white px-2.5 sm:px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-[#18181b] dark:text-zinc-300 dark:hover:bg-[#202024] transition"
+              title="Print Financial Statement & Completion Certificates"
+            >
+              <Printer size={15} />
+              <span className="hidden lg:inline">Statement</span>
+            </button>
+
+            {/* Lock Vault Button */}
+            {settings.appLockEnabled && (
+              <button
+                onClick={() => setIsUnlocked(false)}
+                className="flex items-center gap-1.5 rounded-xl border border-zinc-300 bg-white px-2.5 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-[#18181b] dark:text-zinc-300 dark:hover:bg-[#202024] transition"
+                title="Lock Local Vault"
+              >
+                <Lock size={15} className="text-zinc-600 dark:text-zinc-300" />
+              </button>
+            )}
+
             {/* Create Goal button */}
             <button
               onClick={() => setShowCreateWizard(true)}
@@ -961,13 +1102,26 @@ export default function App() {
                         <p className="text-xs font-bold text-rose-800 dark:text-rose-300">
                           {behindGoals.length} goal{behindGoals.length > 1 ? "s are" : " is"} behind schedule
                         </p>
-                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        <div className="flex flex-wrap gap-2 mt-2">
                           {behindGoals.map(g => {
                             const reqM = requiredMonthly(g.targetAmount, g.currentAmount, g.targetDate);
                             return (
-                              <span key={g.id} className="inline-flex items-center gap-1 rounded-lg bg-rose-100 dark:bg-rose-950/40 px-2 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-300">
-                                {g.name} · needs {formatINR(reqM)}/mo
-                              </span>
+                              <div key={g.id} className="inline-flex items-center gap-2 rounded-lg bg-white dark:bg-[#18181b] border border-rose-200 dark:border-rose-900/60 px-2.5 py-1 text-xs shadow-sm">
+                                <span className="font-bold text-rose-800 dark:text-rose-300">
+                                  {g.name}
+                                </span>
+                                <span className="text-[11px] text-zinc-500">
+                                  needs {formatINR(reqM)}/mo
+                                </span>
+                                <button
+                                  onClick={() => setRecalibratingGoal(g)}
+                                  className="inline-flex items-center gap-1 rounded-md bg-rose-600 hover:bg-rose-700 text-white px-2 py-0.5 text-[10px] font-extrabold transition shadow-sm"
+                                  title="Recalibrate monthly contribution or target deadline"
+                                >
+                                  <RefreshCw size={10} />
+                                  <span>Recalibrate</span>
+                                </button>
+                              </div>
                             );
                           })}
                         </div>
@@ -1062,6 +1216,7 @@ export default function App() {
                           }}
                           onQuickDeposit={amt => handleTransaction(goal.id, "deposit", amt, "Quick deposit")}
                           onShare={() => handleShareGoal(goal)}
+                          onRecalibrate={g => setRecalibratingGoal(g)}
                         />
                       ))
                     )}
@@ -1150,6 +1305,7 @@ export default function App() {
             capacity={availableMonthlyCapacity}
             onBack={() => { setView("dashboard"); setSelectedGoalId(null); }}
             onTransaction={handleTransaction}
+            onRecalibrate={g => setRecalibratingGoal(g)}
             onStatusChange={async (goal, status) => {
               if (status === "archived") {
                 await handleArchiveGoal(goal);
@@ -1198,6 +1354,10 @@ export default function App() {
             isStandalone={isStandalone}
             onTriggerInstall={triggerInstallApp}
             onEnableNotifications={handleEnableNotifications}
+            onSetPin={handleSetAppPin}
+            onRemovePin={handleRemoveAppPin}
+            onExportEncrypted={handleOpenEncryptedExport}
+            onImportEncrypted={() => setEncryptedModalMode("import")}
           />
         )}
 
@@ -1250,6 +1410,12 @@ export default function App() {
             goals={goals}
             totalDeposited={totalDeposited}
             onBack={() => setView("dashboard")}
+            onStartChallenge={(ch) =>
+              handleCreateGoalFromCalculator({
+                ...ch,
+                category: "Personal"
+              })
+            }
           />
         )}
 
@@ -1377,6 +1543,55 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* 1-Tap Salary Day Batch Modal */}
+      {showSalaryDayModal && (
+        <SalaryDayBatchModal
+          goals={goals}
+          onClose={() => setShowSalaryDayModal(false)}
+          onConfirmBatchDeposit={handleBatchDeposit}
+        />
+      )}
+
+      {/* Recalibrate Behind-Schedule Goal Modal */}
+      {recalibratingGoal && (
+        <RecalibratePlanModal
+          goal={recalibratingGoal}
+          onClose={() => setRecalibratingGoal(null)}
+          onSaveUpdatedGoal={handleRecalibrateGoal}
+        />
+      )}
+
+      {/* Printable Statement & Certificates Modal */}
+      {showPrintStatement && (
+        <PrintStatementModal
+          goals={goals}
+          transactions={transactions}
+          settings={settings}
+          streak={streak}
+          badges={badges}
+          onClose={() => setShowPrintStatement(false)}
+        />
+      )}
+
+      {/* Encrypted Vault Export/Import Modal */}
+      {encryptedModalMode && (
+        <EncryptedVaultModal
+          mode={encryptedModalMode}
+          rawBackupJson={rawBackupJson}
+          onImportDecrypted={handleImportDecryptedBackup}
+          onClose={() => setEncryptedModalMode(null)}
+        />
+      )}
+
+      {/* 4-Digit Local PIN Lock Modal */}
+      {ready && settings.appLockEnabled && settings.pinHash && settings.pinSalt && !isUnlocked && (
+        <AppLockModal
+          pinHash={settings.pinHash}
+          pinSalt={settings.pinSalt}
+          onUnlock={() => setIsUnlocked(true)}
+        />
+      )}
     </div>
   );
 }
@@ -1461,9 +1676,13 @@ function DashboardStatCard({
 // GOAL ITEM CARD
 // -------------------------------------------------------------
 function GoalItemCard({
-  goal, onSelect, onQuickDeposit, onShare
+  goal, onSelect, onQuickDeposit, onShare, onRecalibrate
 }: {
-  goal: Goal; onSelect: () => void; onQuickDeposit: (amt: number) => void; onShare: () => void;
+  goal: Goal;
+  onSelect: () => void;
+  onQuickDeposit: (amt: number) => void;
+  onShare: () => void;
+  onRecalibrate?: (goal: Goal) => void;
 }) {
   const pct = goal.targetAmount > 0
     ? Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100))
@@ -1568,15 +1787,28 @@ function GoalItemCard({
         ) : (
           <div className="flex-1" />
         )}
-        {/* Share button */}
-        <button
-          onClick={e => { e.stopPropagation(); onShare(); }}
-          className="flex items-center gap-1 rounded-lg border border-zinc-200 dark:border-zinc-800 px-2 py-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-[#18181b] transition shrink-0"
-          title="Share goal progress"
-        >
-          <Share size={12} />
-          <span className="hidden sm:inline">Share</span>
-        </button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Recalibrate button if behind */}
+          {goal.status === "active" && pace.status === "behind" && onRecalibrate && (
+            <button
+              onClick={e => { e.stopPropagation(); onRecalibrate(goal); }}
+              className="flex items-center gap-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-900/60 px-2.5 py-1.5 text-xs font-bold text-rose-700 dark:text-rose-300 transition"
+              title="Recalibrate this goal's pace or deadline"
+            >
+              <RefreshCw size={12} />
+              <span>Recalibrate</span>
+            </button>
+          )}
+          {/* Share button */}
+          <button
+            onClick={e => { e.stopPropagation(); onShare(); }}
+            className="flex items-center gap-1 rounded-lg border border-zinc-200 dark:border-zinc-800 px-2 py-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-[#18181b] transition"
+            title="Share goal progress"
+          >
+            <Share size={12} />
+            <span className="hidden sm:inline">Share</span>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1586,7 +1818,7 @@ function GoalItemCard({
 // GOAL DETAIL PAGE
 // -------------------------------------------------------------
 function GoalDetailPage({
-  goal, transactions, capacity, onBack, onTransaction, onStatusChange, onDelete, onExportCSV, onSaveEdit
+  goal, transactions, capacity, onBack, onTransaction, onStatusChange, onDelete, onExportCSV, onSaveEdit, onRecalibrate
 }: {
   goal: Goal;
   transactions: Transaction[];
@@ -1597,6 +1829,7 @@ function GoalDetailPage({
   onDelete: (goalId: string) => void;
   onExportCSV: () => void;
   onSaveEdit: (goal: Goal) => Promise<void>;
+  onRecalibrate?: (goal: Goal) => void;
 }) {
   const [txType, setTxType] = useState<"deposit" | "withdrawal">("deposit");
   const [txAmount, setTxAmount] = useState("");
@@ -1780,6 +2013,29 @@ function GoalDetailPage({
           </div>
         </div>
       </section>
+
+      {/* 1-Click Recalibrate Behind Schedule Banner */}
+      {goal.status === "active" && pace.status === "behind" && onRecalibrate && (
+        <div className="finance-card border-rose-300 bg-rose-50/70 p-4 text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-3 text-xs">
+            <AlertTriangle size={20} className="text-rose-600 dark:text-rose-400 shrink-0" />
+            <div>
+              <p className="font-bold text-sm text-rose-900 dark:text-rose-200">
+                This goal is behind schedule ({pace.label})
+              </p>
+              <p className="text-zinc-600 dark:text-zinc-400 text-xs mt-0.5">
+                Current pace requires {formatINR(reqMonth)}/mo to hit your {new Date(goal.targetDate).toLocaleDateString("en-IN", { month: "short", year: "numeric" })} deadline.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => onRecalibrate(goal)}
+            className="btn-primary !bg-rose-600 hover:!bg-rose-700 !text-white !py-2 text-xs font-bold shrink-0 inline-flex items-center gap-1.5 shadow-sm"
+          >
+            <RefreshCw size={14} /> Recalibrate Plan
+          </button>
+        </div>
+      )}
 
       {/* Burn Rate Pace Cards */}
       <section className="grid gap-3 grid-cols-2 sm:grid-cols-4">
@@ -2059,12 +2315,26 @@ function MultiStepGoalCreationWizard({
   const [otherSavings, setOtherSavings] = useState("");
   const [safetyBuffer, setSafetyBuffer] = useState("");
 
+  const [accountForInflation, setAccountForInflation] = useState(false);
+  const [inflationRate, setInflationRate] = useState(6);
+
   const targetN = Number(targetAmount) || 0;
   const currentN = Number(alreadySaved) || 0;
   const incomeN = Number(income) || 0;
   const expensesN = Number(expenses) || 0;
   const otherSavingsN = Number(otherSavings) || 0;
   const safetyBufferN = Number(safetyBuffer) || 0;
+
+  const yearsToTarget = useMemo(() => {
+    if (!startDate || !targetDate) return 1;
+    const diffMs = new Date(targetDate).getTime() - new Date(startDate).getTime();
+    return Math.max(0.1, Number((diffMs / (365.25 * 24 * 60 * 60 * 1000)).toFixed(1)));
+  }, [startDate, targetDate]);
+
+  const inflationCalculation = useMemo(() => {
+    if (!accountForInflation || targetN <= 0) return null;
+    return calculateInflationAdjustedTarget(targetN, Number(inflationRate) || 6, yearsToTarget);
+  }, [accountForInflation, targetN, inflationRate, yearsToTarget]);
 
   const calculatedCapacity = useMemo(() => {
     if (incomeN > 0) {
@@ -2382,6 +2652,59 @@ function MultiStepGoalCreationWizard({
                 </div>
               </div>
 
+              {/* Inflation Adjustment Real Value Calculator */}
+              <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold">
+                    <input
+                      type="checkbox"
+                      checked={accountForInflation}
+                      onChange={e => setAccountForInflation(e.target.checked)}
+                      className="rounded accent-[#0d684c]"
+                    />
+                    <span>Account for Inflation (Real Value Calculator)</span>
+                  </label>
+                  {accountForInflation && (
+                    <div className="flex items-center gap-1 text-[11px] font-bold text-zinc-500">
+                      <span>Rate:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="25"
+                        value={inflationRate}
+                        onChange={e => setInflationRate(Number(e.target.value) || 6)}
+                        className="w-12 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-[#121212] px-1 py-0.5 text-center text-xs font-bold"
+                      />
+                      <span>% p.a.</span>
+                    </div>
+                  )}
+                </div>
+
+                {accountForInflation && inflationCalculation && (
+                  <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-3 text-xs space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-bold text-amber-900 dark:text-amber-200">
+                          Real Future Cost: {formatINR(inflationCalculation.futureCost)}
+                        </p>
+                        <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80 mt-0.5">
+                          At {inflationRate}% inflation over {yearsToTarget} years, ₹{formatINR(targetN)} today will lose {100 - inflationCalculation.purchasingPowerRetainedPct}% purchasing power (+{formatINR(inflationCalculation.additionalCostNeeded)} needed).
+                        </p>
+                      </div>
+                      {targetN !== inflationCalculation.futureCost && (
+                        <button
+                          type="button"
+                          onClick={() => setTargetAmount(String(inflationCalculation.futureCost))}
+                          className="shrink-0 rounded-lg bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 text-[11px] font-bold shadow-sm transition"
+                        >
+                          Apply {formatINR(inflationCalculation.futureCost)}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-3.5 space-y-2">
                 <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold">
                   <input
@@ -2667,7 +2990,8 @@ function EditGoalModal({
 // -------------------------------------------------------------
 function SettingsView({
   settings, onSaveSettings, onBack, onExportJSON, onExportCSV, onImportJSON, onResetAll,
-  isStandalone, onTriggerInstall, onEnableNotifications
+  isStandalone, onTriggerInstall, onEnableNotifications,
+  onSetPin, onRemovePin, onExportEncrypted, onImportEncrypted
 }: {
   settings: AppSettings;
   onSaveSettings: (s: AppSettings) => Promise<void>;
@@ -2679,12 +3003,46 @@ function SettingsView({
   isStandalone?: boolean;
   onTriggerInstall?: () => void;
   onEnableNotifications?: () => void;
+  onSetPin?: (pin: string) => Promise<void>;
+  onRemovePin?: () => Promise<void>;
+  onExportEncrypted?: () => void;
+  onImportEncrypted?: () => void;
 }) {
   const [theme, setTheme] = useState(settings.theme);
   const [income, setIncome] = useState(settings.monthlyIncome ? String(settings.monthlyIncome) : "");
   const [expenses, setExpenses] = useState(settings.fixedMonthlyExpenses ? String(settings.fixedMonthlyExpenses) : "");
   const [otherSavings, setOtherSavings] = useState(settings.otherMonthlySavings ? String(settings.otherMonthlySavings) : "");
   const [safetyBuffer, setSafetyBuffer] = useState(settings.safetyBuffer ? String(settings.safetyBuffer) : "");
+
+  const [pinInput, setPinInput] = useState("");
+  const [pinConfirm, setPinConfirm] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [pinSuccess, setPinSuccess] = useState("");
+  const [savingPin, setSavingPin] = useState(false);
+
+  async function handleSavePin() {
+    if (!pinInput || pinInput.length !== 4 || !/^\d{4}$/.test(pinInput)) {
+      setPinError("PIN must be exactly 4 numeric digits.");
+      return;
+    }
+    if (pinInput !== pinConfirm) {
+      setPinError("PINs do not match. Please re-enter.");
+      return;
+    }
+    setPinError("");
+    setSavingPin(true);
+    try {
+      if (onSetPin) await onSetPin(pinInput);
+      setPinInput("");
+      setPinConfirm("");
+      setPinSuccess("PIN lock successfully activated!");
+      setTimeout(() => setPinSuccess(""), 4000);
+    } catch {
+      setPinError("Failed to set PIN lock.");
+    } finally {
+      setSavingPin(false);
+    }
+  }
 
   async function handleSaveCapacity() {
     await onSaveSettings({
@@ -2745,6 +3103,80 @@ function SettingsView({
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Local App Lock Security */}
+        <div className="finance-card p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Lock size={18} className="text-[#0d684c] dark:text-emerald-400" />
+              <h3 className="font-bold text-sm">Local App Lock (4-Digit PIN)</h3>
+            </div>
+            {settings.appLockEnabled ? (
+              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center gap-1">
+                <ShieldCheck size={13} /> Active PIN Protection
+              </span>
+            ) : (
+              <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                Disabled
+              </span>
+            )}
+          </div>
+
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            Require a 4-digit security PIN before revealing your local vault balances whenever NestSave is opened. All hashing runs on-device using Web Crypto SHA-256 with cryptographic salt.
+          </p>
+
+          {settings.appLockEnabled ? (
+            <div className="pt-2 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={onRemovePin}
+                className="btn-secondary !text-rose-600 hover:!bg-rose-50 dark:hover:!bg-rose-950/30 text-xs font-bold"
+              >
+                <Unlock size={14} /> Remove PIN Lock
+              </button>
+            </div>
+          ) : (
+            <div className="pt-2 space-y-3">
+              <div className="grid grid-cols-2 gap-3 max-w-sm">
+                <div>
+                  <label className="label">New 4-Digit PIN</label>
+                  <input
+                    type="password"
+                    maxLength={4}
+                    placeholder="••••"
+                    value={pinInput}
+                    onChange={e => setPinInput(e.target.value.replace(/\D/g, ""))}
+                    className="input text-center font-bold tracking-widest text-base"
+                  />
+                </div>
+                <div>
+                  <label className="label">Confirm PIN</label>
+                  <input
+                    type="password"
+                    maxLength={4}
+                    placeholder="••••"
+                    value={pinConfirm}
+                    onChange={e => setPinConfirm(e.target.value.replace(/\D/g, ""))}
+                    className="input text-center font-bold tracking-widest text-base"
+                  />
+                </div>
+              </div>
+
+              {pinError && <p className="text-xs font-semibold text-rose-500">{pinError}</p>}
+              {pinSuccess && <p className="text-xs font-semibold text-emerald-600">{pinSuccess}</p>}
+
+              <button
+                type="button"
+                disabled={pinInput.length !== 4 || pinConfirm.length !== 4 || savingPin}
+                onClick={handleSavePin}
+                className="btn-primary text-xs !py-2"
+              >
+                <KeyRound size={14} /> Set 4-Digit PIN Lock
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Mobile & Offline App (PWA) */}
@@ -2878,13 +3310,22 @@ function SettingsView({
 
           <div className="flex flex-wrap gap-2 pt-2">
             <button onClick={onExportJSON} className="btn-secondary text-xs">
-              <Download size={14} /> Export JSON Vault
+              <Download size={14} /> Export Plain JSON
             </button>
             <button onClick={onExportCSV} className="btn-secondary text-xs">
               <FileSpreadsheet size={14} /> Export Goals CSV
             </button>
+            {onExportEncrypted && (
+              <button
+                type="button"
+                onClick={onExportEncrypted}
+                className="btn-secondary !border-emerald-600/40 !bg-emerald-50 text-[#0d684c] dark:!bg-emerald-950/40 dark:text-emerald-300 dark:!border-emerald-700/50 text-xs font-bold"
+              >
+                <Lock size={14} /> Export Encrypted Vault (AES-GCM)
+              </button>
+            )}
             <label className="btn-secondary text-xs cursor-pointer">
-              <Upload size={14} /> Restore from JSON
+              <Upload size={14} /> Restore Plain JSON
               <input
                 type="file"
                 accept="application/json,.json"
@@ -2892,6 +3333,15 @@ function SettingsView({
                 onChange={e => e.target.files?.[0] && onImportJSON(e.target.files[0])}
               />
             </label>
+            {onImportEncrypted && (
+              <button
+                type="button"
+                onClick={onImportEncrypted}
+                className="btn-secondary text-xs font-bold"
+              >
+                <KeyRound size={14} /> Restore Encrypted Vault
+              </button>
+            )}
           </div>
         </div>
 

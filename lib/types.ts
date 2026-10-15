@@ -85,6 +85,9 @@ export interface AppSettings extends UserFinancialCapacity {
   reminderDayOfWeek?: number; // 0=Sun,6=Sat
   reminderHour?: number; // 0-23
   accentColor?: string;
+  appLockEnabled?: boolean;
+  pinHash?: string;
+  pinSalt?: string;
 }
 
 // Gamification

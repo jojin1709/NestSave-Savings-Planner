@@ -99,10 +99,26 @@ NestSave is deployed and available directly at:
 - Ahead / behind schedule tracking
 - Projected completion date
 
-### Financial Calculators
-- **Savings vs. EMI comparison**: Compares buying on loan vs. saving cash upfront and reveals total interest saved
-- **SIP Wealth Gain Calculator**: Models compound wealth gain, invested capital, and maturity value over time
-- **Emergency Fund Tiered Buffer**: Calibrates 3-month (essential), 6-month (recommended), and 12-month safety nets with one-click goal conversion
+### Financial Calculators & Banking Suite
+- **Bank Recurring Deposit (RD) Calculator**: Indian quarterly compounding standard ($A = P \times \frac{(1 + r/4)^{4n} - 1}{1 - (1 + r/4)^{-1/3}}$), maturity estimation, total interest earned, and 1-click goal conversion.
+- **Bank Fixed Deposit (FD) Calculator**: Quarterly compounding maturity calculator, total wealth gain, and 1-click goal creation.
+- **Savings vs. EMI comparison**: Compares buying on loan vs. saving cash upfront and reveals total interest saved.
+- **SIP Wealth Gain Calculator**: Models compound wealth gain, invested capital, and maturity value over time.
+- **Emergency Fund Tiered Buffer**: Calibrates 3-month (essential), 6-month (recommended), and 12-month safety nets with one-click goal conversion.
+
+### Dynamic Recalibration & Real Value
+- **1-Click "Recalibrate Plan" for Behind-Schedule Goals**: Instant recalibration modal with two deterministic options:
+  - **Keep Deadline**: Automatically recalculates and locks the higher monthly contribution required to hit the original target date.
+  - **Keep Savings Pace**: Extends the target deadline to a realistic future date based on your actual historical savings speed.
+- **Inflation Adjustment Toggle (Real Value Calculator)**: Built into the Goal Creation Wizard to calculate future required corpus based on annual inflation (e.g. 6% p.a.) so long-term goals (education, car, house down payment) preserve purchasing power.
+
+### Gamification & Habit-Building
+- **Savings Challenges Mode**: Pre-built structured challenges with daily and weekly checkpoints:
+  - **52-Week Challenge**: Incremental weekly savings accumulating ₹1,37,800+ in a year.
+  - **30-Day Momentum Kickstart**: Daily ₹500 deposits to build disciplined savings habits.
+  - **Daily ₹50 Habit Builder**: Low-friction ₹50/day accumulation reaching ₹18,250/yr.
+  - **100-Day ₹25K Reserve**: Fast ₹25,000 emergency cash cushion.
+- **Salary Day 1-Tap Batch Depositor**: Instantly allocates and logs planned monthly contributions across all active goals simultaneously on payday.
 
 ### Multi-Goal Management
 - Manage unlimited goals simultaneously
@@ -121,26 +137,13 @@ NestSave is deployed and available directly at:
 - Dedicated goal completion screen at 100% with confetti animation
 - Milestone tracking persisted so celebrations never repeat
 
-### Data & Export
-- JSON full backup and restore
-- Goals CSV export
-- All data stored in IndexedDB — 100% on-device
-
-### UI & Experience
-- Pitch-black dark mode (zero blue/navy tint)
-- Light mode
-- System theme detection
-- Responsive, mobile-first layout
-- Progressive Web App (PWA) — installable offline
-- Indian Rupee (₹) formatting with Indian numbering system (₹1,00,000)
-- Lucide SVG icons throughout — zero emojis
-
-### Privacy & Security
-- No login, no account, no signup
-- No backend server
-- No analytics or tracking
-- No bank connections
-- No money movement
+### Privacy, Security & Data Portability
+- **Local App Lock (4-Digit PIN)**: Require a security PIN before showing vault balances. Hashes on-device using Web Crypto SHA-256 with cryptographic salt.
+- **Password-Encrypted Vault Backup**: Export and restore your complete local vault using military-grade **AES-GCM 256** encryption and **PBKDF2** key derivation.
+- Plain JSON and CSV export/restore options.
+- **Printable PDF Financial Statement & Goal Completion Certificates**: Generates sleek, 1-page official summaries and achievement certificates with zero server dependencies.
+- No login, no account, no signup, no tracking.
+- All data stored in IndexedDB — 100% on-device.
 
 ---
 

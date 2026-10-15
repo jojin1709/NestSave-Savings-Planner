@@ -4,12 +4,12 @@ import { useState, useMemo } from "react";
 import {
   ArrowLeft, Calculator, Coins, ShieldCheck, TrendingUp,
   CreditCard, Sparkles, AlertCircle, CheckCircle2, ArrowRight,
-  PiggyBank, Info, ChevronRight, Zap
+  PiggyBank, Info, ChevronRight, Zap, Repeat, Landmark
 } from "lucide-react";
 import { AppSettings, Goal } from "../lib/types";
 import {
   formatINR, calculateEMI, compareSavingsVsEMI,
-  calculateSIP, calculateEmergencyFund, savingsCapacity
+  calculateSIP, calculateEmergencyFund, calculateRD, calculateFD, savingsCapacity
 } from "../lib/calculations";
 
 interface CalculatorsViewProps {
@@ -29,7 +29,37 @@ export default function CalculatorsView({
   onBack,
   onCreateGoalFromCalculator
 }: CalculatorsViewProps) {
-  const [activeTab, setActiveTab] = useState<"emi" | "sip" | "emergency">("emi");
+  const [activeTab, setActiveTab] = useState<"emi" | "sip" | "rd" | "fd" | "emergency">("emi");
+
+  // --- TAB 4: RD (RECURRING DEPOSIT) STATE ---
+  const [rdMonthly, setRdMonthly] = useState<number>(5000);
+  const [rdRate, setRdRate] = useState<number>(7.1);
+  const [rdTenureMonths, setRdTenureMonths] = useState<number>(12);
+
+  const rdResult = useMemo(() => {
+    return calculateRD(rdMonthly, rdRate, rdTenureMonths);
+  }, [rdMonthly, rdRate, rdTenureMonths]);
+
+  const projectedRDDate = useMemo(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + rdTenureMonths);
+    return d.toISOString().slice(0, 10);
+  }, [rdTenureMonths]);
+
+  // --- TAB 5: FD (FIXED DEPOSIT) STATE ---
+  const [fdPrincipal, setFdPrincipal] = useState<number>(100000);
+  const [fdRate, setFdRate] = useState<number>(7.25);
+  const [fdTenureMonths, setFdTenureMonths] = useState<number>(12);
+
+  const fdResult = useMemo(() => {
+    return calculateFD(fdPrincipal, fdRate, fdTenureMonths);
+  }, [fdPrincipal, fdRate, fdTenureMonths]);
+
+  const projectedFDDate = useMemo(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + fdTenureMonths);
+    return d.toISOString().slice(0, 10);
+  }, [fdTenureMonths]);
 
   // --- TAB 1: SAVINGS VS EMI STATE ---
   const [purchasePrice, setPurchasePrice] = useState<number>(80000);
@@ -107,40 +137,64 @@ export default function CalculatorsView({
       </div>
 
       {/* Tabs */}
-      <div className="flex rounded-xl border border-zinc-200 bg-white p-1 dark:border-zinc-800 dark:bg-[#121212]">
+      <div className="flex gap-1 overflow-x-auto rounded-xl border border-zinc-200 bg-white p-1 dark:border-zinc-800 dark:bg-[#121212] no-scrollbar">
         <button
           onClick={() => setActiveTab("emi")}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-bold transition ${
+          className={`flex shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition ${
             activeTab === "emi"
               ? "bg-[#0d684c] text-white shadow-sm"
               : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
           }`}
         >
-          <CreditCard size={15} />
+          <CreditCard size={14} />
           <span>Savings vs. EMI</span>
         </button>
 
         <button
           onClick={() => setActiveTab("sip")}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-bold transition ${
+          className={`flex shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition ${
             activeTab === "sip"
               ? "bg-[#0d684c] text-white shadow-sm"
               : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
           }`}
         >
-          <TrendingUp size={15} />
-          <span>SIP & Compound Growth</span>
+          <TrendingUp size={14} />
+          <span>SIP Growth</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("rd")}
+          className={`flex shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition ${
+            activeTab === "rd"
+              ? "bg-[#0d684c] text-white shadow-sm"
+              : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          }`}
+        >
+          <Repeat size={14} />
+          <span>Bank RD</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("fd")}
+          className={`flex shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition ${
+            activeTab === "fd"
+              ? "bg-[#0d684c] text-white shadow-sm"
+              : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          }`}
+        >
+          <Landmark size={14} />
+          <span>Fixed Deposit</span>
         </button>
 
         <button
           onClick={() => setActiveTab("emergency")}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-bold transition ${
+          className={`flex shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition ${
             activeTab === "emergency"
               ? "bg-[#0d684c] text-white shadow-sm"
               : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
           }`}
         >
-          <ShieldCheck size={15} />
+          <ShieldCheck size={14} />
           <span>Emergency Fund</span>
         </button>
       </div>
@@ -445,6 +499,315 @@ export default function CalculatorsView({
                     <Sparkles size={14} /> Track as Wealth Goal
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: RECURRING DEPOSIT (RD) */}
+      {activeTab === "rd" && (
+        <div className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-12">
+            <div className="finance-card p-5 space-y-4 lg:col-span-5">
+              <div className="flex items-center gap-2 text-[#0d684c] dark:text-emerald-400 font-bold text-sm">
+                <Repeat size={18} />
+                <h3>Bank Recurring Deposit (RD)</h3>
+              </div>
+              <p className="text-xs text-zinc-500">
+                Compounded quarterly as per Indian banking guidelines (SBI, Post Office, HDFC).
+              </p>
+
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="label">Monthly Installment (₹)</label>
+                  <input
+                    type="number"
+                    step="500"
+                    min="500"
+                    value={rdMonthly}
+                    onChange={e => setRdMonthly(Math.max(100, Number(e.target.value)))}
+                    className="input font-semibold"
+                  />
+                  <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                    {[2000, 5000, 10000, 25000].map(amt => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setRdMonthly(amt)}
+                        className="rounded-md border border-zinc-200 dark:border-zinc-800 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        ₹{amt.toLocaleString("en-IN")}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="label">Annual Interest Rate (% p.a.)</label>
+                  <input
+                    type="number"
+                    step="0.05"
+                    min="1"
+                    max="15"
+                    value={rdRate}
+                    onChange={e => setRdRate(Math.max(0.1, Number(e.target.value)))}
+                    className="input font-semibold"
+                  />
+                  <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                    {[
+                      { label: "6.8% (SBI 1-Yr)", r: 6.8 },
+                      { label: "7.1% (Post Office)", r: 7.1 },
+                      { label: "7.5% (Sr. Citizen)", r: 7.5 }
+                    ].map(item => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => setRdRate(item.r)}
+                        className="rounded-md border border-zinc-200 dark:border-zinc-800 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="label">Tenure (Months): {rdTenureMonths} Mo ({Math.round(rdTenureMonths / 12 * 10) / 10} Yrs)</label>
+                  <input
+                    type="range"
+                    min="6"
+                    max="120"
+                    step="6"
+                    value={rdTenureMonths}
+                    onChange={e => setRdTenureMonths(Number(e.target.value))}
+                    className="w-full accent-[#0d684c]"
+                  />
+                  <div className="flex justify-between text-[10px] text-zinc-400 font-bold">
+                    <span>6 Mo</span>
+                    <span>1 Yr</span>
+                    <span>2 Yrs</span>
+                    <span>3 Yrs</span>
+                    <span>5 Yrs</span>
+                    <span>10 Yrs</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Results Panel */}
+            <div className="finance-card p-5 space-y-5 lg:col-span-7 flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                  Projected RD Maturity Value
+                </span>
+                <div className="text-3xl font-black text-[#0d684c] dark:text-emerald-400 mt-1">
+                  {formatINR(rdResult.maturityValue)}
+                </div>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Total of {rdTenureMonths} monthly deposits of {formatINR(rdMonthly)} with quarterly compounding.
+                </p>
+
+                {/* Progress Visual */}
+                <div className="mt-4 space-y-1.5">
+                  <div className="flex justify-between text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">
+                    <span>Deposit vs Interest Ratio</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                      +{Math.round((rdResult.totalInterestEarned / rdResult.totalInvested) * 100)}% Gain
+                    </span>
+                  </div>
+                  <div className="h-2.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden flex">
+                    <div
+                      className="h-full bg-zinc-600 dark:bg-zinc-400"
+                      style={{
+                        width: `${(rdResult.totalInvested / rdResult.maturityValue) * 100}%`
+                      }}
+                      title="Invested"
+                    />
+                    <div
+                      className="h-full bg-[#0d684c] dark:bg-emerald-500 flex-1"
+                      title="Guaranteed Interest"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-4 text-xs">
+                  <div className="rounded-xl border border-zinc-100 p-3 space-y-0.5 dark:border-zinc-800/80 dark:bg-[#18181b]/50">
+                    <div className="text-[10px] uppercase font-bold text-zinc-400">Total Invested</div>
+                    <div className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
+                      {formatINR(rdResult.totalInvested)}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-zinc-100 p-3 space-y-0.5 dark:border-zinc-800/80 dark:bg-[#18181b]/50">
+                    <div className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400">
+                      Interest Earned
+                    </div>
+                    <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                      +{formatINR(rdResult.totalInterestEarned)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    onCreateGoalFromCalculator({
+                      name: `Bank RD (${formatINR(rdMonthly)}/mo)`,
+                      targetAmount: rdResult.maturityValue,
+                      category: "Investments",
+                      targetDate: projectedRDDate,
+                      note: `Recurring Deposit saving ${formatINR(rdMonthly)}/month at ${rdRate}% p.a. maturity target.`
+                    });
+                  }}
+                  className="btn-primary !py-2 text-xs font-bold w-full sm:w-auto"
+                >
+                  <Sparkles size={14} /> Turn into an Active RD Goal
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: FIXED DEPOSIT (FD) */}
+      {activeTab === "fd" && (
+        <div className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-12">
+            <div className="finance-card p-5 space-y-4 lg:col-span-5">
+              <div className="flex items-center gap-2 text-[#0d684c] dark:text-emerald-400 font-bold text-sm">
+                <Landmark size={18} />
+                <h3>Fixed Deposit (FD) Compounding</h3>
+              </div>
+              <p className="text-xs text-zinc-500">
+                Lump sum deposit compounding quarterly until full term maturity.
+              </p>
+
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="label">Principal Deposit (₹)</label>
+                  <input
+                    type="number"
+                    step="10000"
+                    min="1000"
+                    value={fdPrincipal}
+                    onChange={e => setFdPrincipal(Math.max(1000, Number(e.target.value)))}
+                    className="input font-semibold"
+                  />
+                  <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                    {[50000, 100000, 200000, 500000].map(amt => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setFdPrincipal(amt)}
+                        className="rounded-md border border-zinc-200 dark:border-zinc-800 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        ₹{amt.toLocaleString("en-IN")}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="label">Annual Interest Rate (% p.a.)</label>
+                  <input
+                    type="number"
+                    step="0.05"
+                    min="1"
+                    max="15"
+                    value={fdRate}
+                    onChange={e => setFdRate(Math.max(0.1, Number(e.target.value)))}
+                    className="input font-semibold"
+                  />
+                  <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                    {[
+                      { label: "7.0% (1-Yr FD)", r: 7.0 },
+                      { label: "7.25% (3-Yr FD)", r: 7.25 },
+                      { label: "7.75% (Sr. Citizen)", r: 7.75 }
+                    ].map(item => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => setFdRate(item.r)}
+                        className="rounded-md border border-zinc-200 dark:border-zinc-800 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="label">Tenure: {fdTenureMonths} Months ({Math.round(fdTenureMonths / 12 * 10) / 10} Yrs)</label>
+                  <input
+                    type="range"
+                    min="6"
+                    max="120"
+                    step="6"
+                    value={fdTenureMonths}
+                    onChange={e => setFdTenureMonths(Number(e.target.value))}
+                    className="w-full accent-[#0d684c]"
+                  />
+                  <div className="flex justify-between text-[10px] text-zinc-400 font-bold">
+                    <span>6 Mo</span>
+                    <span>1 Yr</span>
+                    <span>2 Yrs</span>
+                    <span>3 Yrs</span>
+                    <span>5 Yrs</span>
+                    <span>10 Yrs</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Results Panel */}
+            <div className="finance-card p-5 space-y-5 lg:col-span-7 flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                  Fixed Deposit Maturity Payout
+                </span>
+                <div className="text-3xl font-black text-[#0d684c] dark:text-emerald-400 mt-1">
+                  {formatINR(fdResult.maturityValue)}
+                </div>
+                <p className="text-xs text-zinc-500 mt-1">
+                  One-time principal of {formatINR(fdPrincipal)} locked for {fdTenureMonths} months at {fdRate}% p.a.
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 pt-6 text-xs">
+                  <div className="rounded-xl border border-zinc-100 p-3 space-y-0.5 dark:border-zinc-800/80 dark:bg-[#18181b]/50">
+                    <div className="text-[10px] uppercase font-bold text-zinc-400">Principal Deposit</div>
+                    <div className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
+                      {formatINR(fdResult.principal)}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-zinc-100 p-3 space-y-0.5 dark:border-zinc-800/80 dark:bg-[#18181b]/50">
+                    <div className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400">
+                      Guaranteed Interest
+                    </div>
+                    <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                      +{formatINR(fdResult.totalInterestEarned)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    onCreateGoalFromCalculator({
+                      name: `FD Target (${formatINR(fdPrincipal)})`,
+                      targetAmount: fdResult.maturityValue,
+                      category: "Investments",
+                      targetDate: projectedFDDate,
+                      note: `Fixed Deposit target reaching ${formatINR(fdResult.maturityValue)} on maturity.`
+                    });
+                  }}
+                  className="btn-primary !py-2 text-xs font-bold w-full sm:w-auto"
+                >
+                  <Sparkles size={14} /> Track as FD Goal
+                </button>
               </div>
             </div>
           </div>
