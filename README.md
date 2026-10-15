@@ -14,6 +14,10 @@ NestSave plans, tracks, and protects your financial goals entirely on your perso
   <img src="https://img.shields.io/badge/Launch%20Web%20App-nestsave.vercel.app-0d684c?style=for-the-badge&logo=vercel&logoColor=white" alt="Launch Web App" />
 </a>
 &nbsp;&nbsp;
+<a href="https://nestsave.vercel.app/features" target="_blank">
+  <img src="https://img.shields.io/badge/Features-Deep%20Dive-0284c7?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Features Overview" />
+</a>
+&nbsp;&nbsp;
 <a href="https://nestsave.vercel.app/download" target="_blank">
   <img src="https://img.shields.io/badge/Download%20APK-Android%20v1.0.0-10B981?style=for-the-badge&logo=android&logoColor=white" alt="Download Android APK" />
 </a>
@@ -33,6 +37,9 @@ NestSave plans, tracks, and protects your financial goals entirely on your perso
 ```bash
 # Launch directly in your browser:
 https://nestsave.vercel.app
+
+# Explore Full Architecture & Feature Matrix:
+https://nestsave.vercel.app/features
 
 # Download the standalone Native Android APK:
 https://nestsave.vercel.app/download

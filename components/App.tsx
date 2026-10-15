@@ -1018,6 +1018,16 @@ export default function App() {
               <span>AI</span>
             </button>
 
+            {/* Features Page */}
+            <a
+              href="/features"
+              className="hidden lg:flex items-center gap-1.5 rounded-xl border border-zinc-300 bg-white px-2.5 sm:px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-[#18181b] dark:text-zinc-300 dark:hover:bg-[#202024] transition"
+              title="Explore all NestSave features"
+            >
+              <Sparkles size={14} className="text-emerald-500" />
+              <span>Features</span>
+            </a>
+
             {/* Download Native Android App */}
             <a
               href="/download"

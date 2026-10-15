@@ -41,7 +41,13 @@ export default function DownloadPage() {
             </div>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/features"
+              className="text-xs sm:text-sm font-semibold text-zinc-300 hover:text-white px-3 py-1.5 rounded-xl hover:bg-zinc-800/60 transition-all"
+            >
+              Features
+            </Link>
             <Link
               href="/"
               className="text-xs sm:text-sm font-semibold text-zinc-300 hover:text-white px-3.5 py-2 rounded-xl hover:bg-zinc-800/60 transition-all border border-transparent hover:border-zinc-700/60"
