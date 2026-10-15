@@ -10,6 +10,12 @@ NestSave plans, tracks, and protects your financial goals entirely on your perso
 
 <br />
 
+<a href="https://trendshift.io/repositories/26416?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-26416" target="_blank" rel="noopener noreferrer">
+  <img src="./public/trendshift-badge.svg" alt="NestSave | Trendshift #1 Repository of the Day" width="250" height="55" />
+</a>
+
+<br /><br />
+
 <a href="https://nestsave.vercel.app/" target="_blank">
   <img src="https://img.shields.io/badge/Launch%20Web%20App-nestsave.vercel.app-0d684c?style=for-the-badge&logo=vercel&logoColor=white" alt="Launch Web App" />
 </a>
@@ -28,6 +34,14 @@ NestSave plans, tracks, and protects your financial goals entirely on your perso
 &nbsp;&nbsp;
 <a href="./LICENSE">
   <img src="https://img.shields.io/badge/License-MIT-0d684c?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="MIT License" />
+</a>
+&nbsp;&nbsp;
+<a href="./CHANGELOG.md">
+  <img src="https://img.shields.io/badge/Changelog-v1.0.1-6366f1?style=for-the-badge&logo=git&logoColor=white" alt="Changelog" />
+</a>
+&nbsp;&nbsp;
+<a href="https://www.linkedin.com/in/jojin-john/" target="_blank">
+  <img src="https://img.shields.io/badge/LinkedIn-Jojin%20John-0077b5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" />
 </a>
 
 <br /><br />
@@ -285,7 +299,7 @@ Go to **Settings → Encrypted Vault Backup**, set a secure password, and export
 
 ## Developer & License
 
-**Built with pride by [Jojin John](https://github.com/jojin1709)**  
+**Built with pride by [Jojin John](https://github.com/jojin1709)** • **[LinkedIn Profile](https://www.linkedin.com/in/jojin-john/)**  
 NestSave is an independent software project crafted with care as a private, high-integrity alternative to commercial data-harvesting finance platforms.
 
 This project is open source and available under the [MIT License](./LICENSE).

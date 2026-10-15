@@ -152,12 +152,18 @@ export default function App() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const isDismissed = localStorage.getItem("nestsave_dismiss_android_banner") === "true";
-      const isAndroid = /Android/i.test(navigator.userAgent);
-      if (!isDismissed && isAndroid) {
+      if (!isDismissed) {
         setShowAndroidBanner(true);
       }
     }
   }, []);
+
+  function handleDismissApkBanner() {
+    setShowAndroidBanner(false);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("nestsave_dismiss_android_banner", "true");
+    }
+  }
 
   // 1. Initial Load & PWA
   useEffect(() => {
@@ -1096,6 +1102,59 @@ export default function App() {
 
       {/* Main View Area */}
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 pb-28">
+        {/* Banner: Experience Full Enhancements on Native Android APK */}
+        {showAndroidBanner && (
+          <div className="mb-6 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/70 via-zinc-900 to-zinc-950 p-4 sm:p-5 shadow-lg shadow-emerald-950/40 relative overflow-hidden transition-all">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[80px] pointer-events-none rounded-full" />
+            
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div className="mt-0.5 rounded-xl bg-emerald-500/20 p-2.5 text-emerald-400 border border-emerald-500/30 shrink-0">
+                  <Smartphone size={20} className="animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-extrabold text-white tracking-tight">
+                      Want the full enhanced experience?
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      Recommended
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-zinc-300 leading-relaxed max-w-2xl">
+                    For hardware-backed biometric fingerprint lock, 100% offline Room SQLite database, 120Hz smooth animations, and automatic updates, download the native NestSave Android app.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 self-end sm:self-center">
+                <a
+                  href="/download"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 px-3.5 py-2 text-xs font-bold text-zinc-950 transition-all shadow-md shadow-emerald-950/60 hover:-translate-y-0.5"
+                >
+                  <Download size={14} />
+                  <span>Get APK</span>
+                  <span className="text-[10px] bg-black/20 text-zinc-950 px-1 py-0.2 rounded font-mono">v1.0.0</span>
+                </a>
+                <a
+                  href="/features"
+                  className="inline-flex items-center gap-1 rounded-xl border border-zinc-700 bg-zinc-800/80 hover:bg-zinc-700 px-3 py-2 text-xs font-semibold text-zinc-200 transition"
+                >
+                  <span>Features</span>
+                </a>
+                <button
+                  onClick={handleDismissApkBanner}
+                  className="rounded-xl p-2 text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition"
+                  title="Dismiss notification"
+                  aria-label="Dismiss banner"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* VIEW 1: DASHBOARD */}
         {view === "dashboard" && (
           <>

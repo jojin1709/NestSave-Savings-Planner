@@ -621,7 +621,7 @@ export default function DownloadPage() {
             <span>— Private, Offline-First Savings Goal Planner</span>
           </div>
           <div>
-            Built with pride by <a href="https://github.com/jojin1709" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-white underline">Jojin John</a>
+            Built with pride by <a href="https://github.com/jojin1709" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-white underline">Jojin John</a> • <a href="https://www.linkedin.com/in/jojin-john/" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-blue-400 underline">LinkedIn</a>
           </div>
         </div>
       </footer>
