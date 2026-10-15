@@ -136,48 +136,17 @@ export default function DownloadPage() {
 
             {/* Scan with Phone QR Code Drawer */}
             <div className="mt-8 w-full max-w-xl p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 flex items-center gap-4">
-              <div className="p-2 rounded-xl bg-white flex-shrink-0 shadow-md">
-                {/* Clean QR code graphic */}
-                <svg className="w-16 h-16" viewBox="0 0 33 33" fill="none">
-                  {/* Position detection markers */}
-                  <rect x="0" y="0" width="7" height="7" fill="#000000" />
-                  <rect x="1" y="1" width="5" height="5" fill="#FFFFFF" />
-                  <rect x="2" y="2" width="3" height="3" fill="#000000" />
-                  
-                  <rect x="26" y="0" width="7" height="7" fill="#000000" />
-                  <rect x="27" y="1" width="5" height="5" fill="#FFFFFF" />
-                  <rect x="28" y="2" width="3" height="3" fill="#000000" />
-                  
-                  <rect x="0" y="26" width="7" height="7" fill="#000000" />
-                  <rect x="1" y="27" width="5" height="5" fill="#FFFFFF" />
-                  <rect x="2" y="28" width="3" height="3" fill="#000000" />
-
-                  {/* QR Pattern Data Blocks */}
-                  <rect x="9" y="2" width="2" height="3" fill="#000000" />
-                  <rect x="14" y="1" width="3" height="2" fill="#000000" />
-                  <rect x="19" y="3" width="4" height="2" fill="#000000" />
-                  <rect x="10" y="7" width="3" height="2" fill="#000000" />
-                  <rect x="16" y="8" width="2" height="4" fill="#000000" />
-                  <rect x="2" y="9" width="3" height="2" fill="#000000" />
-                  <rect x="6" y="12" width="2" height="3" fill="#000000" />
-                  <rect x="11" y="12" width="3" height="3" fill="#000000" />
-                  <rect x="18" y="13" width="4" height="2" fill="#000000" />
-                  <rect x="25" y="9" width="3" height="3" fill="#000000" />
-                  <rect x="29" y="13" width="2" height="4" fill="#000000" />
-                  <rect x="10" y="18" width="4" height="2" fill="#000000" />
-                  <rect x="16" y="17" width="2" height="5" fill="#000000" />
-                  <rect x="21" y="18" width="3" height="3" fill="#000000" />
-                  <rect x="9" y="23" width="2" height="3" fill="#000000" />
-                  <rect x="13" y="25" width="4" height="2" fill="#000000" />
-                  <rect x="20" y="24" width="2" height="4" fill="#000000" />
-                  <rect x="25" y="23" width="4" height="2" fill="#000000" />
-                  <rect x="27" y="27" width="3" height="3" fill="#000000" />
-                </svg>
+              <div className="p-1 rounded-xl bg-white flex-shrink-0 shadow-md">
+                <img
+                  src="/qr-download.svg"
+                  alt="Scan QR code with phone camera to download NestSave APK"
+                  className="w-16 h-16 rounded-lg"
+                />
               </div>
               <div className="text-left">
                 <div className="text-xs font-bold text-white flex items-center gap-1.5">
                   <span>Scan to download on Android</span>
-                  <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-mono">Direct Camera Scan</span>
+                  <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-mono">Camera Scan</span>
                 </div>
                 <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
                   Open your phone camera to download the APK file directly to your phone without transferring cables.
@@ -618,6 +587,10 @@ export default function DownloadPage() {
                 <div>Min SDK: <span className="text-white">Android 8.0 (API 26)</span></div>
                 <div>Target SDK: <span className="text-white">Android 15 (API 35)</span></div>
                 <div>16 KB Pages: <span className="text-emerald-400">Verified Compatible</span></div>
+              </div>
+              <div className="mt-3 p-2.5 rounded-xl bg-black/50 border border-zinc-800/80 font-mono text-[10px] text-zinc-400 max-w-xl flex items-center gap-2">
+                <span className="text-zinc-500 font-bold uppercase">SHA-256:</span>
+                <span className="text-emerald-400 truncate select-all">f3f9f25f401af468998275f6a959ac119dc8b719069e9740c8ccbf41e0005fa4</span>
               </div>
             </div>
 
