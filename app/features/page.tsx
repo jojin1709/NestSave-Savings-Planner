@@ -237,6 +237,50 @@ export default function FeaturesPage() {
         </div>
 
         {/* ========================================================= */}
+        {/* PLATFORM SHOWCASE BANNER IMAGE */}
+        {/* ========================================================= */}
+        <div className="relative mx-auto max-w-6xl pb-20">
+          <div className="relative rounded-3xl p-2 sm:p-3 bg-gradient-to-b from-zinc-800/90 via-zinc-900 to-zinc-950 border border-emerald-500/30 shadow-2xl shadow-emerald-950/70 overflow-hidden group">
+            {/* Ambient Backlight Glow */}
+            <div className="absolute inset-0 bg-emerald-500/15 blur-[120px] -z-10 rounded-full" />
+            
+            <img
+              src="/features-banner.jpg"
+              alt="NestSave Multi-Device Platform — Expense Tracker, Web Dashboard, Financial Analytics & Insights, and Savings Streaks"
+              className="w-full h-auto rounded-2xl object-cover shadow-2xl border border-zinc-800/80 transition-transform duration-500 group-hover:scale-[1.008]"
+              loading="eager"
+            />
+          </div>
+        </div>
+
+        {/* ========================================================= */}
+        {/* WHAT'S NEW IN THIS UPDATE (v1.0.0) SECTION */}
+        {/* ========================================================= */}
+        <div className="relative mx-auto max-w-6xl pb-24">
+          <div className="text-center max-w-3xl mx-auto mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold mb-4">
+              <span>🚀 Latest Update (v1.0.0)</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+              What&apos;s New in this Release?
+            </h2>
+            <p className="mt-3 text-xs sm:text-sm text-zinc-400">
+              Major new features, native Android architecture, and local-first personal finance calculators.
+            </p>
+          </div>
+
+          <div className="relative rounded-3xl p-2 sm:p-3 bg-gradient-to-b from-zinc-800/90 via-zinc-900 to-zinc-950 border border-emerald-500/30 shadow-2xl shadow-emerald-950/70 overflow-hidden group">
+            <div className="absolute inset-0 bg-emerald-500/15 blur-[120px] -z-10 rounded-full" />
+            <img
+              src="/whats-new-v100.jpg"
+              alt="NestSave v1.0.0 Update Infographic — What's New in this Update"
+              className="w-full h-auto rounded-2xl object-cover shadow-2xl border border-zinc-800/80 transition-transform duration-500 group-hover:scale-[1.008]"
+              loading="lazy"
+            />
+          </div>
+        </div>
+
+        {/* ========================================================= */}
         {/* DETAILED FEATURE CATEGORIES */}
         {/* ========================================================= */}
         <div className="space-y-20">

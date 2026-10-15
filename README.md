@@ -32,6 +32,10 @@ NestSave plans, tracks, and protects your financial goals entirely on your perso
 
 <br /><br />
 
+<p align="center">
+  <img src="./public/features-banner.jpg" width="100%" alt="NestSave Ecosystem — Expense Tracker, Web Dashboard, Financial Analytics & Insights, and Savings Streaks" style="border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1);" />
+</p>
+
 <p><strong>Access NestSave Anywhere</strong></p>
 
 ```bash
