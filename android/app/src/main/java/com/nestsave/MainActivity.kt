@@ -71,18 +71,24 @@ fun NestSaveMainScreen() {
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            text = "NestSave",
-                            fontWeight = FontWeight.Black,
-                            fontSize = 18.sp,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                            text = "Zero Cloud Savings Planner",
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        NestSaveLogoIcon(size = 32.dp)
+                        Column {
+                            Text(
+                                text = "NestSave",
+                                fontWeight = FontWeight.Black,
+                                fontSize = 18.sp,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Text(
+                                text = "Zero Cloud Savings Planner",
+                                fontSize = 10.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 },
                 actions = {
@@ -386,4 +392,37 @@ fun SalaryDayBatchDialog(goals: List<Goal>, onDismiss: () -> Unit) {
         },
         containerColor = DarkSurface
     )
+}
+
+@Composable
+fun NestSaveLogoIcon(modifier: Modifier = Modifier, size: androidx.compose.ui.unit.Dp = 32.dp) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(RoundedCornerShape(size * 0.28f))
+            .background(Color(0xFF0D684C)),
+        contentAlignment = Alignment.Center
+    ) {
+        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+            val center = androidx.compose.ui.geometry.Offset(this.size.width / 2f, this.size.height / 2f)
+            drawCircle(
+                color = Color.White,
+                radius = this.size.width * 0.265f,
+                center = center,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = this.size.width * 0.055f)
+            )
+            drawCircle(
+                color = Color.White,
+                radius = this.size.width * 0.165f,
+                center = center,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = this.size.width * 0.05f)
+            )
+            drawCircle(
+                color = Color.White,
+                radius = this.size.width * 0.07f,
+                center = center,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = this.size.width * 0.045f)
+            )
+        }
+    }
 }

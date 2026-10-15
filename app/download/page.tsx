@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import NestSaveLogo from "../../components/NestSaveLogo";
 
 export const metadata: Metadata = {
   title: "Download NestSave Android App — APK (Offline-First Financial Planner)",
@@ -18,13 +19,7 @@ export default function DownloadPage() {
       {/* Top Navbar */}
       <header className="sticky top-0 z-50 backdrop-blur-md bg-slate-950/80 border-b border-slate-800/80 px-4 sm:px-8 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
-            <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-              <polyline points="17 21 17 13 7 13 7 21" />
-              <polyline points="7 3 7 8 15 8" />
-            </svg>
-          </div>
+          <NestSaveLogo size={40} className="rounded-xl shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform" />
           <div>
             <span className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
               NestSave
@@ -59,6 +54,12 @@ export default function DownloadPage() {
 
       {/* Hero Section */}
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-12 sm:py-20 flex flex-col items-center text-center">
+        {/* Prominent NestSave Brand Logo */}
+        <div className="mb-6 relative">
+          <div className="absolute inset-0 rounded-3xl bg-emerald-500/20 blur-xl animate-pulse" />
+          <NestSaveLogo size={84} className="relative rounded-3xl shadow-2xl shadow-emerald-950/80 ring-2 ring-emerald-500/40" />
+        </div>
+
         {/* Release Pill */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs sm:text-sm font-semibold mb-6 shadow-sm">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
@@ -81,7 +82,7 @@ export default function DownloadPage() {
         <div className="mt-10 w-full max-w-lg p-6 sm:p-8 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-emerald-500/30 shadow-2xl shadow-emerald-950/50 flex flex-col items-center">
           <div className="w-full flex items-center justify-between text-xs sm:text-sm text-slate-400 mb-4 pb-3 border-b border-slate-800">
             <span>File: <strong className="text-slate-200">NestSave-v1.0.0.apk</strong></span>
-            <span>Size: <strong className="text-slate-200">~18 MB</strong></span>
+            <span>Size: <strong className="text-slate-200">~12.2 MB</strong></span>
             <span>Target: <strong className="text-slate-200">Android 8.0+</strong></span>
           </div>
 

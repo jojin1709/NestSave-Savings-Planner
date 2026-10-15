@@ -1,23 +1,32 @@
 <div align="center">
 
-<h1>🪺 NestSave</h1>
+<img src="./public/icon-192.png" width="96" height="96" alt="NestSave Logo" style="border-radius: 26px; box-shadow: 0 10px 25px -5px rgba(13, 104, 76, 0.4);" />
 
-### NestSave is a local-first, privacy-first savings goal planner.
+# NestSave
+### Private, Offline-First Savings Goal Planner & Wealth Roadmap
 
-It runs entirely on your device. No accounts. No cloud sync. No tracking. Your financial data never leaves your browser.
+It runs entirely on your device. No accounts. No cloud sync. No tracking. Your financial data never leaves your device.
 
 <br />
 
 <a href="https://nestsave.vercel.app/" target="_blank">
-  <img src="https://img.shields.io/badge/Launch%20App-nestsave.vercel.app-0d684c?style=for-the-badge&logo=vercel&logoColor=white" alt="Launch NestSave" />
+  <img src="https://img.shields.io/badge/Launch%20Web%20App-nestsave.vercel.app-0d684c?style=for-the-badge&logo=vercel&logoColor=white" alt="Launch NestSave" />
+</a>
+&nbsp;
+<a href="https://nestsave.vercel.app/download" target="_blank">
+  <img src="https://img.shields.io/badge/Download%20APK-Android%20v1.0.0-10B981?style=for-the-badge&logo=android&logoColor=white" alt="Download Android APK" />
+</a>
+&nbsp;
+<a href="https://github.com/jojin1709/NestSave-Savings-Planner-v1/releases/tag/v1.0.0" target="_blank">
+  <img src="https://img.shields.io/badge/GitHub%20Release-v1.0.0-18181b?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Release" />
 </a>
 
 <br /><br />
 
-**Use NestSave directly in your browser:**  
-### 🌐 [https://nestsave.vercel.app](https://nestsave.vercel.app/)
+**Access NestSave Anywhere:**  
+🌐 **Web App:** [https://nestsave.vercel.app](https://nestsave.vercel.app/) • 📱 **Android APK:** [https://nestsave.vercel.app/download](https://nestsave.vercel.app/download)
 
-<sub>Installable as a Progressive Web App (PWA) on Mobile and Desktop. Works 100% offline.</sub>
+<sub>Available on Web, PWA, and 100% Native Android (Kotlin + Jetpack Compose + Room DB). Works entirely offline.</sub>
 
 ---
 
