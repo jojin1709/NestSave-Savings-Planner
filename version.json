@@ -1,0 +1,15 @@
+{
+  "versionCode": 2,
+  "versionName": "1.0.1",
+  "releaseDate": "2026-10-15",
+  "title": "NestSave v1.0.1",
+  "changelog": [
+    "In-app automated update notifications",
+    "Hardware-backed Biometric Fingerprint & Face Vault lock",
+    "Indian Bank RD & FD compound maturity calculators",
+    "Salary-Day batch deposits and savings streak tracking"
+  ],
+  "apkUrl": "https://nestsave.vercel.app/downloads/NestSave.apk",
+  "githubReleaseUrl": "https://github.com/jojin1709/NestSave-Savings-Planner/releases/latest",
+  "downloadPageUrl": "https://nestsave.vercel.app/download"
+}

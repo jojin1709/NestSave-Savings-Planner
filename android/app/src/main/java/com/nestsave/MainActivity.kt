@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.biometric.BiometricPrompt
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,7 +37,11 @@ import com.nestsave.domain.models.Goal
 import com.nestsave.domain.models.GoalStatus
 import com.nestsave.domain.models.GoalType
 import com.nestsave.domain.models.Priority
+import com.nestsave.domain.updater.UpdateCheckResult
+import com.nestsave.domain.updater.UpdateManager
+import com.nestsave.domain.updater.VersionInfo
 import com.nestsave.ui.theme.*
+import kotlinx.coroutines.launch
 
 class MainActivity : FragmentActivity() {
     private var isAppLockEnabled by mutableStateOf(false)
@@ -115,6 +120,26 @@ fun NestSaveMainScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
     var showRDModal by remember { mutableStateOf(false) }
     var showSalaryDayModal by remember { mutableStateOf(false) }
+
+    val coroutineScope = rememberCoroutineScope()
+    var updateResult by remember { mutableStateOf<UpdateCheckResult?>(null) }
+    var isCheckingUpdate by remember { mutableStateOf(false) }
+    var isUpdateBannerDismissed by remember { mutableStateOf(false) }
+    var showUpdateDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        isCheckingUpdate = true
+        updateResult = UpdateManager.checkForUpdates()
+        isCheckingUpdate = false
+    }
+
+    val onCheckForUpdates: () -> Unit = {
+        coroutineScope.launch {
+            isCheckingUpdate = true
+            updateResult = UpdateManager.checkForUpdates()
+            isCheckingUpdate = false
+        }
+    }
 
     // Active goals in state
     val goals = remember {
@@ -268,6 +293,10 @@ fun NestSaveMainScreen(
                 goals = goals,
                 totalSaved = totalSaved,
                 totalTarget = totalTarget,
+                updateResult = updateResult,
+                isUpdateBannerDismissed = isUpdateBannerDismissed,
+                onDismissUpdateBanner = { isUpdateBannerDismissed = true },
+                onOpenUpdateDialog = { showUpdateDialog = true },
                 onOpenRD = { showRDModal = true },
                 onOpenSalaryDay = { showSalaryDayModal = true }
             )
@@ -286,7 +315,11 @@ fun NestSaveMainScreen(
             4 -> SettingsScreen(
                 paddingValues = paddingValues,
                 isLockEnabled = isLockEnabled,
-                onToggleLock = onToggleLock
+                onToggleLock = onToggleLock,
+                updateResult = updateResult,
+                isCheckingUpdate = isCheckingUpdate,
+                onCheckForUpdates = onCheckForUpdates,
+                onOpenUpdateDialog = { showUpdateDialog = true }
             )
         }
     }
@@ -297,6 +330,10 @@ fun NestSaveMainScreen(
 
     if (showSalaryDayModal) {
         SalaryDayBatchDialog(goals = goals, onDismiss = { showSalaryDayModal = false })
+    }
+
+    if (showUpdateDialog && updateResult != null) {
+        UpdateDialog(result = updateResult!!, onDismiss = { showUpdateDialog = false })
     }
 }
 
@@ -309,6 +346,10 @@ fun HomeScreen(
     goals: List<Goal>,
     totalSaved: Double,
     totalTarget: Double,
+    updateResult: UpdateCheckResult? = null,
+    isUpdateBannerDismissed: Boolean = false,
+    onDismissUpdateBanner: () -> Unit = {},
+    onOpenUpdateDialog: () -> Unit = {},
     onOpenRD: () -> Unit,
     onOpenSalaryDay: () -> Unit
 ) {
@@ -319,6 +360,54 @@ fun HomeScreen(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        if (updateResult?.isUpdateAvailable == true && !isUpdateBannerDismissed) {
+            item {
+                Card(
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF064E3B)),
+                    border = BorderStroke(1.dp, NestEmeraldLight),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text("🚀", fontSize = 22.sp)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Update Available: v${updateResult.latestVersion?.versionName ?: "1.0.1"}",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = Color.White
+                            )
+                            Text(
+                                text = updateResult.latestVersion?.title ?: "Tap to download the latest update",
+                                fontSize = 11.sp,
+                                color = Color(0xFFA7F3D0)
+                            )
+                        }
+                        Button(
+                            onClick = onOpenUpdateDialog,
+                            colors = ButtonDefaults.buttonColors(containerColor = NestEmeraldLight),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text("Update", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF022C22))
+                        }
+                        IconButton(
+                            onClick = onDismissUpdateBanner,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "Dismiss", tint = Color(0xFFA7F3D0), modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+            }
+        }
+
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -642,7 +731,11 @@ fun BadgesScreen(paddingValues: PaddingValues) {
 fun SettingsScreen(
     paddingValues: PaddingValues,
     isLockEnabled: Boolean,
-    onToggleLock: (Boolean) -> Unit
+    onToggleLock: (Boolean) -> Unit,
+    updateResult: UpdateCheckResult? = null,
+    isCheckingUpdate: Boolean = false,
+    onCheckForUpdates: () -> Unit = {},
+    onOpenUpdateDialog: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -730,15 +823,182 @@ fun SettingsScreen(
                 colors = CardDefaults.cardColors(containerColor = DarkCard),
                 modifier = Modifier.fillMaxWidth()
             ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("APP UPDATES & RELEASES", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextDarkSecondary)
+                        Text("Installed: v${BuildConfig.VERSION_NAME}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NestEmeraldLight)
+                    }
+
+                    if (updateResult?.isUpdateAvailable == true) {
+                        val latest = updateResult.latestVersion
+                        Card(
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF064E3B)),
+                            border = BorderStroke(1.dp, NestEmeraldLight),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text("🚀", fontSize = 20.sp)
+                                    Column {
+                                        Text("Update Available: v${latest?.versionName ?: ""}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White)
+                                        Text("Released ${latest?.releaseDate ?: "Recently"}", fontSize = 10.sp, color = Color(0xFFA7F3D0))
+                                    }
+                                }
+                                if (!latest?.title.isNullOrEmpty()) {
+                                    Text(latest?.title ?: "", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                                }
+                                latest?.changelog?.forEach { note ->
+                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text("•", color = NestEmeraldLight, fontSize = 12.sp)
+                                        Text(note, fontSize = 11.sp, color = Color.White)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Button(
+                                    onClick = {
+                                        UpdateManager.openUpdateDownload(context, latest?.apkUrl ?: "https://nestsave.vercel.app/download")
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(containerColor = NestEmeraldLight),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFF022C22))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Download & Install Latest APK", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF022C22))
+                                }
+                            }
+                        }
+                    } else if (updateResult?.error != null) {
+                        Text(
+                            text = updateResult.error ?: "Unable to check for updates",
+                            fontSize = 11.sp,
+                            color = Color(0xFFF87171)
+                        )
+                    } else if (updateResult != null) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = NestEmeraldLight, modifier = Modifier.size(16.dp))
+                            Text("You are using the latest version of NestSave ✓", fontSize = 12.sp, color = Color(0xFFA7F3D0))
+                        }
+                    }
+
+                    Button(
+                        onClick = onCheckForUpdates,
+                        enabled = !isCheckingUpdate,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = DarkSurface),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        if (isCheckingUpdate) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = NestEmeraldLight, strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Checking for updates...", fontSize = 12.sp, color = Color.White)
+                        } else {
+                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp), tint = NestEmeraldLight)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Check for Updates Now", fontSize = 12.sp, color = Color.White)
+                        }
+                    }
+                }
+            }
+        }
+
+        item {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkCard),
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("ABOUT NESTSAVE", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextDarkSecondary)
-                    Text("NestSave Native Android v1.0.0", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color.White)
-                    Text("Package: com.nestsave • 16 KB Page Supported", fontSize = 11.sp, color = TextDarkSecondary)
-                    Text("100% Offline-First Room SQLite Database • Zero Network Permissions", fontSize = 11.sp, color = NestEmeraldLight)
+                    Text("NestSave Native Android v${BuildConfig.VERSION_NAME} (Build ${BuildConfig.VERSION_CODE})", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color.White)
+                    Text("Package: com.nestsave • 16 KB Page Aligned Linux ELF", fontSize = 11.sp, color = TextDarkSecondary)
+                    Text("100% Offline-First Room SQLite Database • Zero Cloud Tracking", fontSize = 11.sp, color = NestEmeraldLight)
                 }
             }
         }
     }
+}
+
+// ==============================================================
+// UPDATE MODAL DIALOG
+// ==============================================================
+@Composable
+fun UpdateDialog(
+    result: UpdateCheckResult,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val latest = result.latestVersion ?: return
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("🚀", fontSize = 24.sp)
+                Column {
+                    Text("New Update Available!", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+                    Text("v${BuildConfig.VERSION_NAME} → v${latest.versionName}", fontSize = 12.sp, color = NestEmeraldLight, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (latest.title.isNotEmpty()) {
+                    Text(latest.title, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color.White)
+                }
+                Text("What's New in this release:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextDarkSecondary)
+                latest.changelog.forEach { note ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text("•", color = NestEmeraldLight, fontSize = 12.sp)
+                        Text(note, fontSize = 12.sp, color = Color.White)
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "This update includes the latest security patches, biometric improvements, and financial engine enhancements.",
+                    fontSize = 11.sp,
+                    color = TextDarkSecondary
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onDismiss()
+                    UpdateManager.openUpdateDownload(context, latest.apkUrl)
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = NestEmerald)
+            ) {
+                Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Download & Install", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Later", color = TextDarkSecondary)
+            }
+        },
+        containerColor = DarkCard,
+        shape = RoundedCornerShape(16.dp)
+    )
 }
 
 // ==============================================================

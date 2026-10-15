@@ -114,7 +114,7 @@ export default function DownloadPage() {
                   </div>
                   <div className="text-left">
                     <div className="text-sm font-extrabold tracking-tight">Download APK</div>
-                    <div className="text-[11px] text-emerald-100/80 font-mono font-medium">v1.0.0 • 12.2 MB • Release Build</div>
+                    <div className="text-[11px] text-emerald-100/80 font-mono font-medium">v1.0.0 • 12.3 MB • In-App Auto-Updater</div>
                   </div>
                 </div>
                 <span className="text-xs bg-white/15 px-2 py-1 rounded-lg text-white font-mono">.apk</span>
@@ -122,7 +122,7 @@ export default function DownloadPage() {
 
               {/* GitHub Releases secondary */}
               <a
-                href="https://github.com/jojin1709/NestSave-Savings-Planner/releases/tag/v1.0.0"
+                href="https://github.com/jojin1709/NestSave-Savings-Planner/releases"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-5 py-4 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-200 font-semibold text-sm flex items-center justify-center gap-2.5 transition-all"
@@ -160,7 +160,7 @@ export default function DownloadPage() {
                 <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                 </svg>
-                <span>Zero Internet Permissions</span>
+                <span>Zero Cloud Tracking</span>
               </div>
               <div className="flex items-center gap-1.5 text-zinc-300">
                 <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
