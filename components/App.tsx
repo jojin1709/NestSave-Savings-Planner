@@ -9,7 +9,7 @@ import {
   Flame, Award, AlertCircle, CheckCircle2, Clock, Percent, TrendingUp,
   FileSpreadsheet, AlertTriangle, Calendar, Repeat, PlayCircle, Bot,
   PauseCircle, CheckCircle, RefreshCw, Cpu, Wifi, WifiOff, Undo2, Target,
-  Smartphone, Share, BarChart3, TrendingDown, Trophy, Home, Calculator
+  Smartphone, Share, BarChart3, TrendingDown, Trophy, Home, Calculator, Bell
 } from "lucide-react";
 
 import NestSaveLogo from "./NestSaveLogo";
@@ -19,6 +19,7 @@ import GoalCategoryIcon, { ICON_OPTIONS } from "./GoalCategoryIcon";
 import AnalyticsView from "./AnalyticsView";
 import ExpenseTrackerView from "./ExpenseTrackerView";
 import GamificationView from "./GamificationView";
+import CalculatorsView from "./CalculatorsView";
 
 import {
   Goal, Transaction, AppSettings, GoalStatus, GoalType, Priority, SavingsFrequency,
@@ -431,6 +432,32 @@ export default function App() {
     checkAndAwardBadges({ goalsCount: allGoals.length });
   }
 
+  async function handleCreateGoalFromCalculator(params: {
+    name: string;
+    targetAmount: number;
+    category: string;
+    targetDate: string;
+    note?: string;
+  }) {
+    const newGoal: Goal = {
+      id: uid(),
+      name: params.name,
+      type: params.category.toLowerCase().includes("emergency") ? "emergency" : "purchase",
+      category: params.category,
+      targetAmount: params.targetAmount,
+      currentAmount: 0,
+      startDate: dateInput(),
+      targetDate: params.targetDate,
+      priority: "high",
+      note: params.note,
+      status: "active",
+      celebratedMilestones: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    await handleCreateGoal(newGoal);
+  }
+
   async function handleTransaction(
     goalId: string,
     type: "deposit" | "withdrawal",
@@ -667,6 +694,82 @@ export default function App() {
     return transactions.filter(t => t.type === "deposit").reduce((s, t) => s + t.amount, 0);
   }, [transactions]);
 
+  // Savings Rate %: deposited this month / monthly income
+  const savingsRate = useMemo(() => {
+    if (!settings.monthlyIncome || settings.monthlyIncome <= 0) return null;
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const thisMonthDeposits = transactions
+      .filter(t => t.type === "deposit" && t.date.startsWith(currentMonth))
+      .reduce((s, t) => s + t.amount, 0);
+    return Math.min(100, Math.round((thisMonthDeposits / settings.monthlyIncome) * 100));
+  }, [transactions, settings.monthlyIncome]);
+
+  // Goals behind schedule
+  const behindGoals = useMemo(() => {
+    return goals.filter(g => {
+      if (g.status !== "active") return false;
+      const pace = aheadBehindSchedule(g.targetAmount, g.currentAmount, g.startDate, g.targetDate);
+      return pace.status === "behind";
+    });
+  }, [goals]);
+
+  // Handle Push Notification enable
+  async function handleEnableNotifications() {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      showToast("Browser notifications are not supported on this browser.", "error");
+      return;
+    }
+    if (Notification.permission === "granted") {
+      try {
+        new Notification("NestSave Reminder", {
+          body: "Keep your savings momentum going! Track your progress today.",
+          icon: "/icon.svg"
+        });
+      } catch {}
+      const newSettings = { ...settings, pushNotificationsEnabled: true, notificationsEnabled: true };
+      await saveSettings(newSettings);
+      setSettings(newSettings);
+      showToast("Notification reminder sent! Reminders are active.");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      const newSettings = { ...settings, pushNotificationsEnabled: true, notificationsEnabled: true };
+      await saveSettings(newSettings);
+      setSettings(newSettings);
+      try {
+        new Notification("NestSave Reminder Active", {
+          body: "Push reminders enabled! You'll stay accountable to your savings goals.",
+          icon: "/icon.svg"
+        });
+      } catch {}
+      showToast("Browser notifications enabled! You'll get saving reminders.");
+    } else {
+      showToast("Notification permission denied. Enable it in browser settings.", "warning");
+    }
+  }
+
+  // Handle Web Share
+  async function handleShareGoal(goal: Goal) {
+    const pct = goal.targetAmount > 0 ? Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100)) : 0;
+    const text = `💰 I'm saving for "${goal.name}" on NestSave!\n` +
+      `Progress: ${formatINR(goal.currentAmount)} / ${formatINR(goal.targetAmount)} (${pct}%)\n` +
+      `Target date: ${new Date(goal.targetDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}\n` +
+      `Track your savings locally at NestSave — zero cloud, 100% private.`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `NestSave — ${goal.name}`, text });
+      } catch {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("Goal progress copied to clipboard!");
+      } catch {
+        showToast("Sharing not supported on this browser.", "warning");
+      }
+    }
+  }
+
   if (!ready) {
     return (
       <div className="min-h-screen grid place-items-center bg-white dark:bg-[#000000]">
@@ -734,6 +837,20 @@ export default function App() {
               </button>
             )}
 
+            {/* Calculators button */}
+            <button
+              onClick={() => { setView("calculators"); setSelectedGoalId(null); }}
+              className={`flex items-center gap-1.5 rounded-xl border px-2.5 sm:px-3 py-2 text-xs font-semibold transition ${
+                view === "calculators"
+                  ? "border-[#0d684c] bg-emerald-50 text-[#0d684c] dark:border-emerald-500 dark:bg-[#18181b] dark:text-emerald-300"
+                  : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-[#18181b] dark:text-zinc-300 dark:hover:bg-[#202024]"
+              }`}
+              title="Financial Calculators (EMI vs Cash, SIP, Emergency Fund)"
+            >
+              <Calculator size={15} />
+              <span className="hidden sm:inline">Calculators</span>
+            </button>
+
             {/* AI button — desktop only in header, mobile via bottom nav */}
             <button
               onClick={() => setView("ai")}
@@ -779,7 +896,10 @@ export default function App() {
         {view === "dashboard" && (
           <>
             {goals.length === 0 ? (
-              <CleanEmptyDashboard onCreate={() => setShowCreateWizard(true)} />
+              <CleanEmptyDashboard
+                onCreate={() => setShowCreateWizard(true)}
+                onOpenCalculators={() => setView("calculators")}
+              />
             ) : (
               <div className="space-y-6">
                 {/* Conflict Detection Warning Banner */}
@@ -798,7 +918,7 @@ export default function App() {
                 )}
 
                 {/* Dashboard Metrics Grid */}
-                <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <section className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
                   <DashboardStatCard
                     label="Total Saved"
                     value={formatINR(dashboardTotals.saved)}
@@ -823,7 +943,38 @@ export default function App() {
                     helper={`${dashboardTotals.paceStats.ahead} ahead • ${dashboardTotals.paceStats.behind} behind`}
                     icon={<Clock size={18} className="text-zinc-500" />}
                   />
+                  <DashboardStatCard
+                    label="Savings Rate"
+                    value={savingsRate !== null ? `${savingsRate}%` : "—"}
+                    helper={savingsRate !== null ? `of ₹${(settings.monthlyIncome || 0).toLocaleString("en-IN")} income` : "Set income in Settings"}
+                    icon={<Percent size={18} className={savingsRate !== null && savingsRate >= 20 ? "text-[#0d684c] dark:text-emerald-400" : "text-zinc-500"} />}
+                    highlight={savingsRate !== null && savingsRate >= 20}
+                  />
                 </section>
+
+                {/* Behind-Schedule Alert Banner */}
+                {behindGoals.length > 0 && (
+                  <div className="finance-card border-rose-200 dark:border-rose-900/40 bg-rose-50/60 dark:bg-rose-950/10 p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle size={18} className="mt-0.5 shrink-0 text-rose-600 dark:text-rose-400" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-rose-800 dark:text-rose-300">
+                          {behindGoals.length} goal{behindGoals.length > 1 ? "s are" : " is"} behind schedule
+                        </p>
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          {behindGoals.map(g => {
+                            const reqM = requiredMonthly(g.targetAmount, g.currentAmount, g.targetDate);
+                            return (
+                              <span key={g.id} className="inline-flex items-center gap-1 rounded-lg bg-rose-100 dark:bg-rose-950/40 px-2 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-300">
+                                {g.name} · needs {formatINR(reqM)}/mo
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Filter and Search Bar */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
@@ -874,6 +1025,15 @@ export default function App() {
                     </select>
 
                     <button
+                      onClick={() => { setView("calculators"); setSelectedGoalId(null); }}
+                      className="btn-secondary !py-1.5 text-xs font-semibold"
+                      title="Financial Calculators (EMI vs Cash, SIP, Emergency Buffer)"
+                    >
+                      <Calculator size={14} />
+                      <span className="hidden sm:inline">Calculators</span>
+                    </button>
+
+                    <button
                       onClick={handleExportGoalsCSV}
                       className="btn-secondary !py-1.5 text-xs font-semibold"
                       title="Export Goals to CSV"
@@ -901,6 +1061,7 @@ export default function App() {
                             setView("goal");
                           }}
                           onQuickDeposit={amt => handleTransaction(goal.id, "deposit", amt, "Quick deposit")}
+                          onShare={() => handleShareGoal(goal)}
                         />
                       ))
                     )}
@@ -1036,6 +1197,7 @@ export default function App() {
             onResetAll={requestResetDatabase}
             isStandalone={isStandalone}
             onTriggerInstall={triggerInstallApp}
+            onEnableNotifications={handleEnableNotifications}
           />
         )}
 
@@ -1088,6 +1250,15 @@ export default function App() {
             goals={goals}
             totalDeposited={totalDeposited}
             onBack={() => setView("dashboard")}
+          />
+        )}
+
+        {/* VIEW 8: FINANCIAL CALCULATORS */}
+        {view === "calculators" && (
+          <CalculatorsView
+            settings={settings}
+            onBack={() => setView("dashboard")}
+            onCreateGoalFromCalculator={handleCreateGoalFromCalculator}
           />
         )}
       </main>
@@ -1213,7 +1384,13 @@ export default function App() {
 // -------------------------------------------------------------
 // CLEAN EMPTY DASHBOARD (USER'S ICON + NO FAKE DATA)
 // -------------------------------------------------------------
-function CleanEmptyDashboard({ onCreate }: { onCreate: () => void }) {
+function CleanEmptyDashboard({
+  onCreate,
+  onOpenCalculators
+}: {
+  onCreate: () => void;
+  onOpenCalculators?: () => void;
+}) {
   return (
     <div className="finance-card mx-auto max-w-2xl px-6 py-16 text-center sm:py-24">
       {/* Official Squircle Target Logo */}
@@ -1226,11 +1403,17 @@ function CleanEmptyDashboard({ onCreate }: { onCreate: () => void }) {
         Create your first goal and build a plan around what matters to you.
       </p>
 
-      <div className="mt-6">
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         <button onClick={onCreate} className="btn-primary text-sm font-bold">
           <Plus size={16} />
           <span>Create your first goal</span>
         </button>
+        {onOpenCalculators && (
+          <button onClick={onOpenCalculators} className="btn-secondary text-sm font-semibold">
+            <Calculator size={16} />
+            <span>Try Financial Calculators</span>
+          </button>
+        )}
       </div>
 
       <div className="mt-12 grid gap-3 text-left sm:grid-cols-3 pt-8 border-t border-zinc-100 dark:border-zinc-800">
@@ -1258,17 +1441,17 @@ function CleanEmptyDashboard({ onCreate }: { onCreate: () => void }) {
 // DASHBOARD STAT CARD
 // -------------------------------------------------------------
 function DashboardStatCard({
-  label, value, helper, icon
+  label, value, helper, icon, highlight
 }: {
-  label: string; value: string; helper: string; icon: React.ReactNode;
+  label: string; value: string; helper: string; icon: React.ReactNode; highlight?: boolean;
 }) {
   return (
-    <div className="finance-card p-4 sm:p-5">
+    <div className={`finance-card p-4 sm:p-5 ${highlight ? "border-emerald-200 dark:border-emerald-900/40" : ""}`}>
       <div className="flex items-center justify-between text-zinc-400">
         <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">{label}</span>
         {icon}
       </div>
-      <p className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white">{value}</p>
+      <p className={`mt-2 text-xl sm:text-2xl font-extrabold tracking-tight ${highlight ? "text-[#0d684c] dark:text-emerald-400" : "text-zinc-900 dark:text-white"}`}>{value}</p>
       <p className="mt-1 text-xs text-zinc-500 truncate">{helper}</p>
     </div>
   );
@@ -1278,9 +1461,9 @@ function DashboardStatCard({
 // GOAL ITEM CARD
 // -------------------------------------------------------------
 function GoalItemCard({
-  goal, onSelect, onQuickDeposit
+  goal, onSelect, onQuickDeposit, onShare
 }: {
-  goal: Goal; onSelect: () => void; onQuickDeposit: (amt: number) => void;
+  goal: Goal; onSelect: () => void; onQuickDeposit: (amt: number) => void; onShare: () => void;
 }) {
   const pct = goal.targetAmount > 0
     ? Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100))
@@ -1320,7 +1503,7 @@ function GoalItemCard({
                   pace.status === "ahead"
                     ? "bg-emerald-50 text-[#0d684c] border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900"
                     : pace.status === "behind"
-                    ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900"
+                    ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-900"
                     : "bg-zinc-50 text-zinc-600 border-zinc-200 dark:bg-[#18181b] dark:text-zinc-400 dark:border-zinc-800"
                 }`}>
                   {pace.label}
@@ -1356,29 +1539,45 @@ function GoalItemCard({
       <div className="mt-3.5 cursor-pointer" onClick={onSelect}>
         <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-[#18181b]">
           <div
-            className="h-full rounded-full bg-[#0d684c] dark:bg-emerald-500 transition-all duration-300 ease-out"
+            className={`h-full rounded-full transition-all duration-300 ease-out ${
+              pct >= 100 ? "bg-emerald-500" : pace.status === "behind" ? "bg-rose-500 dark:bg-rose-500" : "bg-[#0d684c] dark:bg-emerald-500"
+            }`}
             style={{ width: `${pct}%` }}
           />
         </div>
       </div>
 
-      {/* Quick Deposit Actions */}
-      {goal.status === "active" && goal.currentAmount < goal.targetAmount && (
-        <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-          <span className="text-[11px] font-semibold text-zinc-400">Quick Deposit:</span>
-          <div className="flex items-center gap-1.5">
-            {[500, 1000, 5000].map(amt => (
-              <button
-                key={amt}
-                onClick={() => onQuickDeposit(amt)}
-                className="rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-[#18181b] dark:text-zinc-300 dark:hover:bg-[#242428]"
-              >
-                +{formatINR(amt)}
-              </button>
-            ))}
+      {/* Quick Actions Row */}
+      <div className="mt-3.5 flex items-center justify-between gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+        {/* Quick deposits */}
+        {goal.status === "active" && goal.currentAmount < goal.targetAmount ? (
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <span className="text-[11px] font-semibold text-zinc-400 shrink-0">Quick:</span>
+            <div className="flex items-center gap-1 flex-wrap">
+              {[500, 1000, 5000].map(amt => (
+                <button
+                  key={amt}
+                  onClick={() => onQuickDeposit(amt)}
+                  className="rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-[#18181b] dark:text-zinc-300 dark:hover:bg-[#242428]"
+                >
+                  +{formatINR(amt)}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex-1" />
+        )}
+        {/* Share button */}
+        <button
+          onClick={e => { e.stopPropagation(); onShare(); }}
+          className="flex items-center gap-1 rounded-lg border border-zinc-200 dark:border-zinc-800 px-2 py-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-[#18181b] transition shrink-0"
+          title="Share goal progress"
+        >
+          <Share size={12} />
+          <span className="hidden sm:inline">Share</span>
+        </button>
+      </div>
     </div>
   );
 }
@@ -2468,7 +2667,7 @@ function EditGoalModal({
 // -------------------------------------------------------------
 function SettingsView({
   settings, onSaveSettings, onBack, onExportJSON, onExportCSV, onImportJSON, onResetAll,
-  isStandalone, onTriggerInstall
+  isStandalone, onTriggerInstall, onEnableNotifications
 }: {
   settings: AppSettings;
   onSaveSettings: (s: AppSettings) => Promise<void>;
@@ -2479,6 +2678,7 @@ function SettingsView({
   onResetAll: () => void;
   isStandalone?: boolean;
   onTriggerInstall?: () => void;
+  onEnableNotifications?: () => void;
 }) {
   const [theme, setTheme] = useState(settings.theme);
   const [income, setIncome] = useState(settings.monthlyIncome ? String(settings.monthlyIncome) : "");
@@ -2576,6 +2776,40 @@ function SettingsView({
               className="btn-primary text-xs !py-2"
             >
               <Smartphone size={14} /> Install to Phone / Desktop
+            </button>
+          </div>
+        </div>
+
+        {/* Savings Reminders & Notifications */}
+        <div className="finance-card p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Bell size={18} className="text-[#0d684c] dark:text-emerald-400" />
+              <h3 className="font-bold text-sm">Savings Reminders & Notifications</h3>
+            </div>
+            {settings.pushNotificationsEnabled ? (
+              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                Enabled
+              </span>
+            ) : (
+              <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                Disabled
+              </span>
+            )}
+          </div>
+
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            Get private on-device reminders to log contributions, stay accountable, and check if you are on track with your goals.
+          </p>
+
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={onEnableNotifications}
+              className="btn-secondary text-xs !py-2 inline-flex items-center gap-1.5"
+            >
+              <Bell size={14} />
+              <span>{settings.pushNotificationsEnabled ? "Test Reminder Notification" : "Enable Browser Notifications"}</span>
             </button>
           </div>
         </div>

@@ -99,6 +99,11 @@ NestSave is deployed and available directly at:
 - Ahead / behind schedule tracking
 - Projected completion date
 
+### Financial Calculators
+- **Savings vs. EMI comparison**: Compares buying on loan vs. saving cash upfront and reveals total interest saved
+- **SIP Wealth Gain Calculator**: Models compound wealth gain, invested capital, and maturity value over time
+- **Emergency Fund Tiered Buffer**: Calibrates 3-month (essential), 6-month (recommended), and 12-month safety nets with one-click goal conversion
+
 ### Multi-Goal Management
 - Manage unlimited goals simultaneously
 - Priority-weighted allocation view across all active goals
@@ -150,6 +155,10 @@ NestSave
 │
 ├── components/
 │   ├── App.tsx             — Full application UI and state
+│   ├── CalculatorsView.tsx — Savings vs EMI, SIP, and Emergency buffer calculators
+│   ├── AnalyticsView.tsx   — Trajectory charts, burn rates, and breakdowns
+│   ├── ExpenseTrackerView.tsx — Monthly expense logger and budget limits
+│   ├── GamificationView.tsx— Savings streaks and achievement badges
 │   ├── NestSaveLogo.tsx    — Official squircle SVG logo
 │   ├── GoalCategoryIcon.tsx — Lucide icon mapper for goal types
 │   ├── GoalCompletionModal.tsx — 100% celebration screen
